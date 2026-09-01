@@ -1,0 +1,22 @@
+# R session and project state
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+~$*

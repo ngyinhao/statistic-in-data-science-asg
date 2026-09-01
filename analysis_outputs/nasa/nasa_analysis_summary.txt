@@ -1,0 +1,297 @@
+NASA POWER Kuala Lumpur solar irradiance forecasting
+Generated: 2026-08-20 10:44:04 +08 
+
+              Item
+        Source URL
+          Latitude
+         Longitude
+         Parameter
+              Unit
+      Observations
+       First month
+        Last month
+   Fill-value gaps
+  Duplicate months
+ Test observations
+    Selected model
+                                                                                                                                                              Value
+ https://power.larc.nasa.gov/api/temporal/monthly/point?parameters=ALLSKY_SFC_SW_DWN&community=RE&longitude=101.6869&latitude=3.139&format=JSON&start=2001&end=2025
+                                                                                                                                                              3.139
+                                                                                                                                                           101.6869
+                                                                                                                                                  ALLSKY_SFC_SW_DWN
+                                                                                                                                                         kWh/m2/day
+                                                                                                                                                                300
+                                                                                                                                                            2001-01
+                                                                                                                                                            2025-12
+                                                                                                                                                                  0
+                                                                                                                                                                  0
+                                                                                                                                                                 24
+                                                                                                                                                             SARIMA
+
+Descriptive statistics
+          Statistic   Value
+       Observations     300
+        First month 2001-01
+         Last month 2025-12
+               Mean  4.7927
+             Median  4.8012
+            Minimum  3.4478
+            Maximum  5.9244
+ Standard deviation  0.4061
+
+Average solar irradiance by month
+ month solar_irradiance
+   Jan           4.5792
+   Feb           5.1459
+   Mar           5.2456
+   Apr           5.1213
+   May           4.9794
+   Jun           4.8658
+   Jul           4.7941
+   Aug           4.8276
+   Sep           4.7046
+   Oct           4.6606
+   Nov           4.3884
+   Dec           4.2005
+
+Holdout accuracy (ranked by RMSE)
+          Model Training_MAE Training_RMSE       MAE      RMSE     MAPE
+         SARIMA   0.22585871    0.30897155 0.1616636 0.2012982 3.513406
+   Holt-Winters   0.23656236    0.30513405 0.1684698 0.2108726 3.602611
+            ETS   0.04440972    0.05830107 0.1932024 0.2303487 4.138774
+ Trend + season   0.21451154    0.27869262 0.2009341 0.2402151 4.313853
+ Seasonal naive   0.30011439    0.40279127 0.2324375 0.2869947 4.858075
+      MASE    sMAPE
+ 0.5386733 3.467616
+ 0.5613518 3.565721
+ 0.6437625 4.090418
+ 0.6695249 4.243174
+ 0.7744963 4.895722
+
+Training versus test error multipliers (current 92:8 split)
+          Model Training_MAE  Test_MAE Test_MAE_x_Training Training_RMSE
+         SARIMA   0.22585871 0.1616636           0.7157733    0.30897155
+   Holt-Winters   0.23656236 0.1684698           0.7121579    0.30513405
+            ETS   0.04440972 0.1932024           4.3504527    0.05830107
+ Trend + season   0.21451154 0.2009341           0.9367052    0.27869262
+ Seasonal naive   0.30011439 0.2324375           0.7744963    0.40279127
+ Test_RMSE Test_RMSE_x_Training
+ 0.2012982            0.6515105
+ 0.2108726            0.6910818
+ 0.2303487            3.9510196
+ 0.2402151            0.8619356
+ 0.2869947            0.7125148
+Interpretation: a Test_RMSE_x_Training value of 1.50 means that the test RMSE is 1.50 times the training RMSE. Values above 1 indicate higher error on unseen test observations; values below 1 indicate lower test-period error. Treat this as descriptive because in-sample residual errors and multi-step holdout errors are not identical evaluation designs.
+
+Train:test split sensitivity (ranked within each model by RMSE)
+          Model Ratio Train_months Test_months Test_start Test_end       MAE
+ Seasonal naive  96:4          288          12    2025-01  2025-12 0.2181250
+ Seasonal naive  92:8          276          24    2024-01  2025-12 0.2324375
+ Seasonal naive 88:12          264          36    2023-01  2025-12 0.2432083
+ Seasonal naive 80:20          240          60    2021-01  2025-12 0.2839400
+ Seasonal naive 70:30          210          90    2018-07  2025-12 0.3059789
+ Seasonal naive 84:16          252          48    2022-01  2025-12 0.3054688
+ Trend + season  96:4          288          12    2025-01  2025-12 0.2044913
+ Trend + season  92:8          276          24    2024-01  2025-12 0.2009341
+ Trend + season 70:30          210          90    2018-07  2025-12 0.2220542
+ Trend + season 88:12          264          36    2023-01  2025-12 0.2348549
+ Trend + season 84:16          252          48    2022-01  2025-12 0.2434744
+ Trend + season 80:20          240          60    2021-01  2025-12 0.2413566
+   Holt-Winters  92:8          276          24    2024-01  2025-12 0.1684698
+   Holt-Winters  96:4          288          12    2025-01  2025-12 0.1802800
+   Holt-Winters 88:12          264          36    2023-01  2025-12 0.2227231
+   Holt-Winters 70:30          210          90    2018-07  2025-12 0.2212299
+   Holt-Winters 80:20          240          60    2021-01  2025-12 0.2463986
+   Holt-Winters 84:16          252          48    2022-01  2025-12 0.2561260
+            ETS  92:8          276          24    2024-01  2025-12 0.1932024
+            ETS  96:4          288          12    2025-01  2025-12 0.2054154
+            ETS 88:12          264          36    2023-01  2025-12 0.2164817
+            ETS 70:30          210          90    2018-07  2025-12 0.2180354
+            ETS 84:16          252          48    2022-01  2025-12 0.2430827
+            ETS 80:20          240          60    2021-01  2025-12 0.2351015
+         SARIMA  92:8          276          24    2024-01  2025-12 0.1616636
+         SARIMA  96:4          288          12    2025-01  2025-12 0.1827572
+         SARIMA 88:12          264          36    2023-01  2025-12 0.2203572
+         SARIMA 80:20          240          60    2021-01  2025-12 0.2245283
+         SARIMA 84:16          252          48    2022-01  2025-12 0.2318636
+         SARIMA 70:30          210          90    2018-07  2025-12 0.2565359
+      RMSE     MAPE      MASE    sMAPE Best_ratio Best_RMSE RMSE_x_best
+ 0.2699806 4.603379 0.7327319 4.604844       96:4 0.2699806    1.000000
+ 0.2869947 4.858075 0.7744963 4.895722       96:4 0.2699806    1.063020
+ 0.3426791 5.209124 0.8023399 5.126105       96:4 0.2699806    1.269273
+ 0.3669411 6.055416 0.9564747 5.866351       96:4 0.2699806    1.359139
+ 0.4007851 6.428695 1.0327750 6.455627       96:4 0.2699806    1.484496
+ 0.4415291 6.554400 1.0241779 6.256008       96:4 0.2699806    1.635410
+ 0.2401009 4.366596 0.6869332 4.282884       96:4 0.2401009    1.000000
+ 0.2402151 4.313853 0.6695249 4.243174       96:4 0.2401009    1.000476
+ 0.2802613 4.615195 0.7495027 4.625584       96:4 0.2401009    1.167265
+ 0.2859340 5.050118 0.7747820 4.935800       96:4 0.2401009    1.190891
+ 0.2940167 5.234415 0.8163228 5.100018       96:4 0.2401009    1.224555
+ 0.2987651 5.109288 0.8130292 5.026997       96:4 0.2401009    1.244331
+ 0.2108726 3.602611 0.5613518 3.565721       92:8 0.2108726    1.000000
+ 0.2197523 3.840237 0.6056020 3.795697       92:8 0.2108726    1.042109
+ 0.2819821 4.781797 0.7347596 4.680620       92:8 0.2108726    1.337215
+ 0.2836597 4.603559 0.7467205 4.608149       92:8 0.2108726    1.345171
+ 0.3101391 5.221263 0.8300133 5.114935       92:8 0.2108726    1.470742
+ 0.3168444 5.508750 0.8587411 5.336441       92:8 0.2108726    1.502539
+ 0.2303487 4.138774 0.6437625 4.090418       92:8 0.2303487    1.000000
+ 0.2435844 4.367533 0.6900374 4.296882       92:8 0.2303487    1.057459
+ 0.2678212 4.633629 0.7141691 4.561680       92:8 0.2303487    1.162677
+ 0.2783515 4.518366 0.7359381 4.544463       92:8 0.2303487    1.208392
+ 0.2941402 5.222562 0.8150093 5.091295       92:8 0.2303487    1.276934
+ 0.2947294 4.967334 0.7919583 4.899639       92:8 0.2303487    1.279492
+ 0.2012982 3.513406 0.5386733 3.467616       92:8 0.2012982    1.000000
+ 0.2384919 3.948994 0.6139233 3.935662       92:8 0.2012982    1.184769
+ 0.2791946 4.766961 0.7269543 4.650317       92:8 0.2012982    1.386970
+ 0.2928143 4.734634 0.7563417 4.687188       92:8 0.2012982    1.454630
+ 0.2993224 4.975163 0.7773940 4.849555       92:8 0.2012982    1.486960
+ 0.3191732 5.373173 0.8658894 5.358649       92:8 0.2012982    1.585574
+ RMSE_pct_above_best
+          0.00000000
+          6.30196850
+         26.92728635
+         35.91386857
+         48.44957849
+         63.54103485
+          0.00000000
+          0.04757043
+         16.72646571
+         19.08910738
+         22.45546612
+         24.43314611
+          0.00000000
+          4.21092554
+         33.72154511
+         34.51708943
+         47.07418371
+         50.25393137
+          0.00000000
+          5.74593985
+         16.26774446
+         20.83920672
+         27.69344017
+         27.94923227
+          0.00000000
+         18.47690554
+         38.69701435
+         45.46295549
+         48.69603404
+         58.55739283
+
+Split RMSE multipliers relative to each model's best observed split
+          Model Ratio      RMSE Best_ratio Best_RMSE RMSE_x_best
+ Seasonal naive  96:4 0.2699806       96:4 0.2699806    1.000000
+ Seasonal naive  92:8 0.2869947       96:4 0.2699806    1.063020
+ Seasonal naive 88:12 0.3426791       96:4 0.2699806    1.269273
+ Seasonal naive 80:20 0.3669411       96:4 0.2699806    1.359139
+ Seasonal naive 70:30 0.4007851       96:4 0.2699806    1.484496
+ Seasonal naive 84:16 0.4415291       96:4 0.2699806    1.635410
+ Trend + season  96:4 0.2401009       96:4 0.2401009    1.000000
+ Trend + season  92:8 0.2402151       96:4 0.2401009    1.000476
+ Trend + season 70:30 0.2802613       96:4 0.2401009    1.167265
+ Trend + season 88:12 0.2859340       96:4 0.2401009    1.190891
+ Trend + season 84:16 0.2940167       96:4 0.2401009    1.224555
+ Trend + season 80:20 0.2987651       96:4 0.2401009    1.244331
+   Holt-Winters  92:8 0.2108726       92:8 0.2108726    1.000000
+   Holt-Winters  96:4 0.2197523       92:8 0.2108726    1.042109
+   Holt-Winters 88:12 0.2819821       92:8 0.2108726    1.337215
+   Holt-Winters 70:30 0.2836597       92:8 0.2108726    1.345171
+   Holt-Winters 80:20 0.3101391       92:8 0.2108726    1.470742
+   Holt-Winters 84:16 0.3168444       92:8 0.2108726    1.502539
+            ETS  92:8 0.2303487       92:8 0.2303487    1.000000
+            ETS  96:4 0.2435844       92:8 0.2303487    1.057459
+            ETS 88:12 0.2678212       92:8 0.2303487    1.162677
+            ETS 70:30 0.2783515       92:8 0.2303487    1.208392
+            ETS 84:16 0.2941402       92:8 0.2303487    1.276934
+            ETS 80:20 0.2947294       92:8 0.2303487    1.279492
+         SARIMA  92:8 0.2012982       92:8 0.2012982    1.000000
+         SARIMA  96:4 0.2384919       92:8 0.2012982    1.184769
+         SARIMA 88:12 0.2791946       92:8 0.2012982    1.386970
+         SARIMA 80:20 0.2928143       92:8 0.2012982    1.454630
+         SARIMA 84:16 0.2993224       92:8 0.2012982    1.486960
+         SARIMA 70:30 0.3191732       92:8 0.2012982    1.585574
+ RMSE_pct_above_best
+          0.00000000
+          6.30196850
+         26.92728635
+         35.91386857
+         48.44957849
+         63.54103485
+          0.00000000
+          0.04757043
+         16.72646571
+         19.08910738
+         22.45546612
+         24.43314611
+          0.00000000
+          4.21092554
+         33.72154511
+         34.51708943
+         47.07418371
+         50.25393137
+          0.00000000
+          5.74593985
+         16.26774446
+         20.83920672
+         27.69344017
+         27.94923227
+          0.00000000
+         18.47690554
+         38.69701435
+         45.46295549
+         48.69603404
+         58.55739283
+Interpretation: an RMSE_x_best value of 1.50 means that split's RMSE is 1.50 times the lowest observed RMSE for the same model.
+
+Lowest observed RMSE split for each model
+          Model Ratio Train_months Test_months Test_start Test_end       MAE
+ Seasonal naive  96:4          288          12    2025-01  2025-12 0.2181250
+ Trend + season  96:4          288          12    2025-01  2025-12 0.2044913
+   Holt-Winters  92:8          276          24    2024-01  2025-12 0.1684698
+            ETS  92:8          276          24    2024-01  2025-12 0.1932024
+         SARIMA  92:8          276          24    2024-01  2025-12 0.1616636
+      RMSE     MAPE      MASE    sMAPE Best_ratio Best_RMSE RMSE_x_best
+ 0.2699806 4.603379 0.7327319 4.604844       96:4 0.2699806           1
+ 0.2401009 4.366596 0.6869332 4.282884       96:4 0.2401009           1
+ 0.2108726 3.602611 0.5613518 3.565721       92:8 0.2108726           1
+ 0.2303487 4.138774 0.6437625 4.090418       92:8 0.2303487           1
+ 0.2012982 3.513406 0.5386733 3.467616       92:8 0.2012982           1
+ RMSE_pct_above_best
+                   0
+                   0
+                   0
+                   0
+                   0
+
+Interpretation note: these are chronological splits, not random splits. Each ratio evaluates a different historical period and forecast horizon, so the lowest value is descriptive rather than proof of a universally optimal ratio. Use one common split when comparing models; rolling-origin validation is preferred for robust model selection. Some alternative Holt-Winters fits may emit non-fatal optimizer warnings and should be interpreted cautiously.
+
+Residual diagnostics
+          Model Residual_n Ljung_Box_lag Ljung_Box_statistic Ljung_Box_p_value
+ Seasonal naive        264            24            92.14907      6.336617e-10
+ Trend + season        276            24            29.89657      1.882036e-01
+   Holt-Winters        264            24            25.87283      3.596492e-01
+            ETS        276            24            28.08019      2.566722e-01
+         SARIMA        276            24            28.91829      2.232212e-01
+
+Model specifications
+          Model                                                   Specification
+ Seasonal naive              Forecast equals observation from 12 months earlier
+ Trend + season                              tslm(formula = y ~ trend + season)
+   Holt-Winters Additive Holt-Winters without trend; alpha=0.0307, gamma=0.1223
+            ETS                                                      ETS(M,N,A)
+         SARIMA                                         ARIMA(1,0,0)(2,1,0)[12]
+
+2026 forecast
+       date point_forecast lower_80 upper_80 lower_95 upper_95
+ 2026-01-01       4.285370 3.888151 4.682588 3.677877 4.892863
+ 2026-02-01       4.815809 4.409687 5.221931 4.194699 5.436919
+ 2026-03-01       5.035470 4.628949 5.441991 4.413749 5.657191
+ 2026-04-01       4.973137 4.566598 5.379677 4.351389 5.594886
+ 2026-05-01       5.011620 4.605080 5.418160 4.389871 5.633370
+ 2026-06-01       4.814278 4.407738 5.220819 4.192529 5.436028
+ 2026-07-01       4.763994 4.357454 5.170535 4.142245 5.385744
+ 2026-08-01       4.795677 4.389137 5.202217 4.173927 5.417427
+ 2026-09-01       4.628328 4.221788 5.034869 4.006579 5.250078
+ 2026-10-01       5.053343 4.646803 5.459883 4.431593 5.675093
+ 2026-11-01       4.352786 3.946246 4.759326 3.731037 4.974536
+ 2026-12-01       4.123346 3.716806 4.529886 3.501596 4.745096

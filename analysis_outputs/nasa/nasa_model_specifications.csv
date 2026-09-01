@@ -1,0 +1,6 @@
+"Model","Specification"
+"Seasonal naive","Forecast equals observation from 12 months earlier"
+"Trend + season","tslm(formula = y ~ trend + season)"
+"Holt-Winters","Additive Holt-Winters without trend; alpha=0.0307, gamma=0.1223"
+"ETS","ETS(M,N,A)"
+"SARIMA","ARIMA(1,0,0)(2,1,0)[12]"
