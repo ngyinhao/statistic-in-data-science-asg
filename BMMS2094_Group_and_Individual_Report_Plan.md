@@ -29,9 +29,9 @@ This plan is based on the requirements and rubrics in [1. BMMS2094 Assignment.pd
 | Member 1: `[Name / ID]` | **SARIMA** | Stationarity, differencing, ARIMA order selection, estimation, residual diagnosis, and forecast interpretation |
 | Member 2: `[Name / ID]` | **Holt-Winters** | Additive/multiplicative choice, level/trend/seasonal components, smoothing parameters, residual diagnosis, and forecast interpretation |
 | Member 3: `[Name / ID]` | **ETS** | ETS error-trend-seasonal structure search, information criterion, estimated states/parameters, residual diagnosis, and forecast interpretation |
-| Member 4: `[Name / ID]` | **Trend + Season** | Regression specification, trend and seasonal terms, coefficient interpretation, assumptions, residual diagnosis, and forecast interpretation |
+| Member 4: `[Name / ID]` | **Multiple Linear Regression (`trend` + `season`)** | Regression specification, trend and seasonal terms, coefficient interpretation, assumptions, residual diagnosis, and forecast interpretation |
 
-The four models above are the official member-contributed models. A seasonal-naive forecast may be retained as a **shared group benchmark**, but it does not replace any member's assigned model and does not require a fifth individual report.
+The four models above are the complete set of official member-contributed models.
 
 ### 2.3 Chronological train-test ratio
 
@@ -63,7 +63,7 @@ Both candidates preserve complete January-December cycles. An exact 70:30 split 
 - SARIMA needs enough repeated seasonal lags to estimate ordinary and seasonal dependence reliably.
 - Holt-Winters needs repeated cycles to initialize and estimate level, trend, and seasonal components.
 - ETS searches across several state-space structures, so additional training observations reduce the risk of selecting a structure from too little history.
-- Trend + Season estimates a time trend and eleven monthly effects, so more training years improve the stability of its coefficients.
+- Multiple Linear Regression (`trend` + `season`) estimates a time trend and eleven monthly effects, so more training years improve the stability of its coefficients.
 
 The 80:20 candidate supplies 20 complete years, two more annual cycles than 72:28. This favors more stable estimation for all four model families.
 
@@ -98,7 +98,7 @@ The 80:20 ratio was selected through the following reasoning:
 1. **The dataset contains 300 monthly observations.** An 80% training allocation gives `300 x 0.80 = 240` observations, while a 20% testing allocation gives `300 x 0.20 = 60` observations.
 2. **Both partitions contain complete seasonal cycles.** The series has a seasonal period of 12 months. The training set contains `240 / 12 = 20` complete annual cycles, and the test set contains `60 / 12 = 5` complete annual cycles. No partition ends in the middle of a year.
 3. **The split remains chronological.** The first 240 observations, January 2001-December 2020, are used for training. The final 60 observations, January 2021-December 2025, are reserved for testing. This prevents future observations from leaking into model estimation.
-4. **The training set is sufficiently large for all four models.** Twenty years of data provide repeated annual patterns for estimating SARIMA seasonal lags, Holt-Winters components, ETS states, and Trend + Season coefficients.
+4. **The training set is sufficiently large for all four models.** Twenty years of data provide repeated annual patterns for estimating SARIMA seasonal lags, Holt-Winters components, ETS states, and Multiple Linear Regression (`trend` + `season`) coefficients.
 5. **The test set remains sufficiently demanding.** Five unseen years cover every calendar month five times. This is enough to evaluate whether each model generalizes across repeated annual cycles rather than succeeding in only one unusual year.
 6. **It balances estimation and evaluation.** A larger training set improves parameter stability, while the 60-month holdout is still long enough to calculate reliable common accuracy measures and inspect forecast deterioration.
 7. **It is more appropriate than exact 70:30 for this seasonal dataset.** Exact 70:30 produces 210 training months and 90 test months. Neither is divisible by 12, so the boundary occurs halfway through an annual cycle.
@@ -107,7 +107,7 @@ The 80:20 ratio was selected through the following reasoning:
 
 **Report-ready explanation:**
 
-> An 80:20 chronological train-test split was selected for the 300-observation monthly series. This allocation uses the first 240 observations from January 2001 to December 2020 for model development and reserves the final 60 observations from January 2021 to December 2025 for out-of-sample evaluation. Because the seasonal period is 12 months, the split provides 20 complete annual cycles for training and five complete annual cycles for testing. It therefore preserves seasonal integrity, avoids future-data leakage, provides sufficient history for estimating SARIMA, Holt-Winters, ETS, and Trend + Season models, and retains a substantial multi-year test period. An exact 70:30 split was not used because its 210- and 90-month partitions end halfway through annual cycles. The 72:28 alternative preserves complete cycles but provides two fewer training years and creates a longer seven-year test horizon. Therefore, 80:20 offers the more suitable balance between stable parameter estimation and meaningful out-of-sample evaluation for this project.
+> An 80:20 chronological train-test split was selected for the 300-observation monthly series. This allocation uses the first 240 observations from January 2001 to December 2020 for model development and reserves the final 60 observations from January 2021 to December 2025 for out-of-sample evaluation. Because the seasonal period is 12 months, the split provides 20 complete annual cycles for training and five complete annual cycles for testing. It therefore preserves seasonal integrity, avoids future-data leakage, provides sufficient history for estimating SARIMA, Holt-Winters, ETS, and Multiple Linear Regression (`trend` + `season`) models, and retains a substantial multi-year test period. An exact 70:30 split was not used because its 210- and 90-month partitions end halfway through annual cycles. The 72:28 alternative preserves complete cycles but provides two fewer training years and creates a longer seven-year test horizon. Therefore, 80:20 offers the more suitable balance between stable parameter estimation and meaningful out-of-sample evaluation for this project.
 
 #### Operational rules for the selected split
 
@@ -143,7 +143,7 @@ Apply this sequence to:
 - SARIMA differencing and orders.
 - Holt-Winters component and smoothing choices.
 - ETS structure and search restrictions.
-- Trend + Season formula.
+- Multiple Linear Regression (`trend` + `season`) formula.
 - Residual-test lag and degrees of freedom.
 - Accuracy measures and primary ranking metric.
 - Final overall model selection.
@@ -181,7 +181,7 @@ This step must be adapted by model:
 - **SARIMA:** use stationarity tests such as KPSS or ADF together with plots; determine non-seasonal differencing `d` and seasonal differencing `D`; avoid over-differencing.
 - **Holt-Winters:** do not difference automatically. Decide whether the model needs level, trend, damped trend, and additive or multiplicative seasonality.
 - **ETS:** do not difference automatically. Allow the ETS structure to represent level, trend, damping, and seasonality; restrict the search only when supported by the data or physical reasoning.
-- **Trend + Season:** represent non-stationary movement through the regression trend term and recurring annual movement through seasonal indicators or another justified seasonal basis. Check whether residual correlation remains after these terms are fitted.
+- **Multiple Linear Regression (`trend` + `season`):** represent non-stationary movement through the regression trend variable and recurring annual movement through the seasonal indicator variables. Check whether residual correlation remains after these terms are fitted.
 
 ### Step 4 - Identify reasonable candidate specifications
 
@@ -209,7 +209,7 @@ This step must be adapted by model:
 - Record the information criterion used, normally AICc, and any restrictions such as additive-only models.
 - Consider a small set of scientifically plausible alternatives if the automatic model leaves autocorrelation or produces implausible forecasts.
 
-#### Trend + Season candidates
+#### Multiple Linear Regression (`trend` + `season`) candidates
 
 - Begin with a regression such as `y ~ trend + season`.
 - Compare a no-trend seasonal model with the linear-trend-plus-season model using only training information.
@@ -265,12 +265,23 @@ Decision rule:
 - **Cover page:** all four names, student IDs, signatures, and contribution percentages.
 - Keep the report concise, comparative, and integrated. Do not paste four individual reports together.
 
+The required section order from the assignment brief is:
+
+1. **Cover Page** - signatures and contribution percentage for every member.
+2. **Introduction** - background, objectives, dataset, and the selected SDG number and title.
+3. **Methodology** - dataset description, preprocessing, overall analytical workflow, forecasting methods, and forecast-evaluation criteria.
+4. **Data Analysis** - combined results and discussion.
+5. **Conclusion** - discussion, limitations, and recommendations where appropriate.
+6. **References** - IEEE referencing style.
+
+Use these six items as the report's controlling structure. An abstract and keywords are **not explicitly required by the assignment brief**. Include them only if the IEEE template being used requires them or the tutor confirms that they are expected; they must never replace or be merged into the cover page.
+
 ### 4.2 Recommended five-page budget
 
 | Page | Planned content |
 |---|---|
 | Page 1 | Cover page with project title, course details, dataset, all four members, IDs, signatures, and contribution percentages |
-| Page 2 | Abstract, keywords, introduction, problem statement, measurable objectives, dataset source/suitability, and SDG 7 alignment |
+| Page 2 | Introduction, problem statement, measurable objectives, dataset source/suitability, and SDG 7 alignment; add only a compact IEEE abstract and keywords before the Introduction if the template or tutor requires them |
 | Page 3 | Common methodology: preprocessing, justified 80:20 whole-season chronological split, diagram-based workflow, four model summaries, diagnostics, and evaluation criteria |
 | Page 4 | Combined data analysis: descriptive pattern, model comparison table, common forecast figure, residual evidence, and interpretation |
 | Page 5 | Critical discussion, SDG implications, limitations, recommendations, conclusion, and compact IEEE references |
@@ -292,9 +303,11 @@ Include:
 - Contribution percentage for each member, totaling exactly 100%.
 - Submission date.
 
-#### Abstract and keywords
+The cover page must contain only the administrative and identification details listed above. **Do not include the abstract, keywords, research summary, model-selection explanation, results, or conclusions on the cover page.** Begin the Introduction on the following page; if an IEEE abstract and keywords are required, place them on that page immediately before the Introduction.
 
-Write this last. Include:
+#### Optional IEEE abstract and keywords
+
+This is **not one of the six sections explicitly required by the assignment brief**. Include it only when required by the IEEE template being used or confirmed by the tutor. If included, place it after the cover page and before the Introduction, never within the cover-page section. Write it last and include:
 
 - The problem and location.
 - Dataset period and number of observations.
@@ -320,11 +333,13 @@ Include:
 Suggested objectives:
 
 1. Validate and describe the monthly NASA POWER solar-irradiance series.
-2. Fit and diagnose SARIMA, Holt-Winters, ETS, and Trend + Season models.
+2. Fit and diagnose SARIMA, Holt-Winters, ETS, and Multiple Linear Regression (`trend` + `season`) models.
 3. Compare all four models on a common 80:20 chronological test, selected after evaluating seasonal integrity, training adequacy, test adequacy, and forecast relevance, using RMSE, MAE, MAPE, MASE, and sMAPE.
 4. Interpret the selected forecast for preliminary solar-resource planning and SDG 7 while acknowledging data and engineering limitations.
 
 #### Methodology
+
+**Proposal-stage boundary:** write this section as a plan of what will be done, not as a preview of what the data showed. It may identify the dataset, fixed sampling period, intended split, candidate models, diagnostics, decision rules, and software procedures. It must not contain observed descriptive summaries, estimated Box-Cox values, selected orders or structures, fitted coefficients, AIC/AICc outcomes, diagnostic statistics or p-values, accuracy results, forecasts, rankings, or a winning model. Move every such empirical finding to **Data Analysis/Results**. In particular, describe how transformation need will be assessed without reporting an estimated lambda in Methodology.
 
 Include:
 
@@ -335,8 +350,7 @@ Include:
 - Exact 80:20 dates, the requirement for complete 12-month cycles, and the step-by-step reason it is preferred over 72:28 and exact 70:30.
 - A compact workflow based on the supplied seven-step diagram.
 - One concise paragraph or compact table describing the four model families.
-- A shared seasonal-naive benchmark only if retained.
-- Transformation decision and training-only parameter selection.
+- Planned transformation assessment and training-only parameter-selection procedure, without reporting an estimated lambda or selected empirical outcome.
 - Residual checks and white-noise loop.
 - Common accuracy metrics and final selection rule.
 - Software, R packages, and reproducibility details.
@@ -355,6 +369,41 @@ Include:
 - Discuss whether differences are practically meaningful rather than only stating the ranking.
 - Note any model with non-white residuals, unstable estimates, overly wide intervals, or implausible values.
 - Clearly separate training fit, test performance, and the future 2026 forecast.
+
+#### Group-level model selection and justification
+
+The group report is responsible for selecting **which forecasting model family will be used for the final forecast**. It is not responsible for explaining in detail how an individual SARIMA order such as `(p,d,q)(P,D,Q)[12]` was obtained. ARIMA/SARIMA order identification, including differencing and ACF/PACF interpretation, belongs in the SARIMA member's individual report. The group report may state the final fitted order in its comparison table, but it should focus on the fair comparison of the four model families and the reason for selecting the overall winner.
+
+The overall winner must not be chosen in advance. The Methodology section should first identify the planned candidates and lock the selection rule before the January 2021-December 2025 test observations are used:
+
+| Planned model | Reason for including it in the group comparison |
+|---|---|
+| **SARIMA** | Represents autocorrelation at ordinary and annual seasonal lags, which may remain after trend and seasonality are addressed. |
+| **Holt-Winters** | Provides a transparent smoothing approach for an evolving level and recurring monthly seasonal pattern, with a trend component included only when supported. |
+| **ETS** | Provides a state-space framework that compares error, trend, damping, and seasonal structures and produces prediction intervals. |
+| **Multiple Linear Regression (`trend` + `season`)** | Uses the numerical `trend` variable and categorical `season` indicator variables to provide an interpretable representation of long-term movement and calendar-month effects. |
+
+Each member must determine and lock the specification of the assigned model using the January 2001-December 2020 training data only. After the four specifications are locked, every model must forecast the same 60 test observations from January 2021 to December 2025. Select the final forecasting model using the following hierarchy:
+
+1. Treat diagnostic validity and physical plausibility as eligibility conditions. Flag a model if its residuals retain material autocorrelation, its estimates are unstable, or its forecasts or intervals contain implausible solar-irradiance values.
+2. Among acceptable models, use **test RMSE as the primary ranking measure** because it penalizes larger forecast errors more heavily.
+3. Use **test MAE as the secondary measure** because it expresses the typical absolute forecast error in the original unit and is less sensitive to a few large errors.
+4. Use MAPE, MASE, and sMAPE as supporting measures rather than allowing one of them to override the declared RMSE/MAE rule without justification.
+5. Compare prediction-interval behavior, stability, interpretability, and the size of the improvement over the next-best model. Discuss whether the difference is practically meaningful rather than only reporting ranks.
+6. Do not select a numerically first-ranked model if its diagnostics or forecasts are unacceptable. If the lowest-RMSE model fails an eligibility condition, select the next defensible model and state the reason transparently.
+7. After selection, refit the **locked specification** of the winning model to all 300 observations and use that refitted model for the 2026 forecast. Keep this future forecast separate from the 60-month test evaluation.
+
+AIC or AICc may be used by an individual member to select specifications **within** a model family when the likelihoods and response treatments are comparable. Do not use AIC/AICc to rank SARIMA directly against Holt-Winters, ETS, or regression. The common out-of-sample test errors provide the group-level comparison.
+
+**Report-ready Methodology wording:**
+
+> SARIMA, Holt-Winters, ETS, and Multiple Linear Regression (`trend` + `season`) will be evaluated as complementary approaches to a monthly series with annual seasonality. SARIMA will represent dependence at ordinary and seasonal lags; Holt-Winters will represent evolving level and seasonal components through exponential smoothing; ETS will search error, trend, damping, and seasonal state-space structures; and Multiple Linear Regression will use numerical `trend` and categorical `season` variables. Each specification will be determined from the training period only and then locked before the common test period is evaluated. The final model will be selected primarily by test RMSE and secondarily by test MAE, subject to acceptable residual white-noise diagnostics, stable estimates, reasonable prediction intervals, and physically plausible forecasts. Empirical selections, estimates, diagnostic outcomes, and accuracy values will be reported in Data Analysis rather than Methodology.
+
+**Report-ready Data Analysis wording (complete after regenerating the 80:20 results):**
+
+> **[Model name]** was selected as the final forecasting model because it achieved the **[lowest/most competitive]** test RMSE of **[value]** and a test MAE of **[value]** on the common January 2021-December 2025 evaluation period. Its residuals **[were/were not]** approximately white noise according to the residual ACF and Ljung-Box test, its prediction intervals were **[appropriate description]**, and its forecasts remained physically plausible. Its RMSE was **[value or percentage]** lower than that of **[next-best model]**, indicating that the improvement was **[practically meaningful/modest]**. The model was therefore preferred because it provided the strongest overall combination of forecast accuracy, diagnostic validity, stability, and suitability for the observed trend, seasonality, and serial dependence.
+
+Do not duplicate this full comparison in every individual report. Each individual report should instead justify why its assigned model was reasonable to test, explain how its own specification was selected from training data, and evaluate whether the evidence supports that model's suitability.
 
 #### Conclusion, critical discussion, limitations, and recommendations
 
@@ -402,17 +451,19 @@ Include:
 
 #### Page 1 - Methodology
 
+Keep this proposal-stage section procedural. Dataset-design facts and prespecified rules are allowed, but all observed summaries, estimates, selected specifications, test statistics, fitted diagnostics, accuracy values, forecasts, and model rankings belong on Page 2 under Results, Discussion, and Conclusion.
+
 Include:
 
 - One-sentence problem and dataset context.
-- Assigned model and why it is suitable for a monthly seasonal series.
+- Assigned model and a concise explanation of why it is a reasonable candidate for a monthly seasonal series; reserve the full four-model comparison and overall winner justification for the group report.
 - Mathematical or conceptual model specification.
-- Transformation decision.
+- Planned transformation assessment, without an estimated Box-Cox value.
 - Exact 80:20 chronological split, its selection rationale, and seasonal frequency 12.
 - Candidate-selection process following Steps 1-6 of the supplied workflow.
-- Final training-set specification and estimated parameters.
+- Candidate specification and training-only selection procedure; report the selected specification and estimated parameters in Results.
 - Software function and important arguments.
-- Residual diagnostics and white-noise decision.
+- Planned residual diagnostics and white-noise decision rule; report the diagnostic outcome in Results.
 - Evaluation measures used.
 
 #### Page 2 - Results, discussion, and conclusion
@@ -422,7 +473,7 @@ Include:
 - A compact actual-versus-forecast figure or a model-specific diagnostic figure.
 - A small table of the model's RMSE, MAE, MAPE, MASE, sMAPE, and Ljung-Box result.
 - Interpretation of forecast pattern and intervals.
-- Comparison with at least the common benchmark and brief context against the other group models without duplicating the full group discussion.
+- Brief comparison with the other group models without duplicating the full group discussion.
 - Summary of model strengths and weaknesses.
 - Model-specific limitations.
 - Evidence-based recommendation and possible improvement.
@@ -448,15 +499,15 @@ Include:
 #### Methodology must include
 
 - Definition of `(p,d,q)(P,D,Q)[12]`.
-- Plot-based discussion of trend and seasonality.
-- Variance/transformation decision.
-- Stationarity assessment using plots and a suitable unit-root test.
-- Justification for `d` and `D`.
-- ACF/PACF interpretation at ordinary and seasonal lags.
+- Planned use of plots to assess trend and seasonality; report the observed patterns in Results.
+- Variance/transformation assessment procedure, without an estimated lambda or empirical outcome.
+- Stationarity-assessment procedure using plots and a suitable unit-root test; report the outcome in Results.
+- Procedure and criteria for choosing `d` and `D`; report the chosen values in Results.
+- Planned ACF/PACF assessment at ordinary and seasonal lags; report its interpretation in Results.
 - Manual candidate process or complete `auto.arima()` settings.
-- Final training-set order, coefficients, standard errors where available, AICc, and drift/mean term status.
-- Residual ACF and Ljung-Box test with appropriate fitted degrees of freedom.
-- Loop-back decision if residual autocorrelation remains.
+- Candidate-order search, AICc criterion, and drift/mean rules; report the selected order, coefficients, standard errors, and AICc in Results.
+- Planned residual ACF and Ljung-Box test with appropriate fitted degrees of freedom.
+- Prespecified loop-back rule if residual autocorrelation remains; report whether it was triggered in Results.
 
 #### Results and discussion must include
 
@@ -472,19 +523,19 @@ Include:
 #### Methodology must include
 
 - Explanation of level, trend, and seasonal components.
-- Justification for additive versus multiplicative seasonality.
-- Explicit decision on whether trend is included and whether it is damped.
-- Final alpha, beta if used, gamma, and initialization method.
-- Explanation of what small or large smoothing values imply.
+- Criteria for choosing additive versus multiplicative seasonality; report the choice and evidence in Results.
+- Criteria for including or damping a trend; report the fitted decision in Results.
+- Parameters to be estimated (alpha, beta if used, and gamma) and the initialization method; report fitted values in Results.
+- Planned interpretation of small or large smoothing values after estimation.
 - Training-only optimization procedure.
-- Residual ACF and Ljung-Box result.
-- Clear handling of any optimization or convergence warning.
+- Planned residual ACF and Ljung-Box procedure; report the result in Results.
+- Prespecified handling of any optimization or convergence warning; report encountered warnings in Results.
 
 #### Results and discussion must include
 
 - 60-month test forecast and accuracy metrics.
 - Interpretation of how quickly level and seasonality adapt.
-- Comparison with the common benchmark and the other model classes.
+- Comparison with the other model classes.
 - Strength: transparent seasonal smoothing and adaptability.
 - Limitations: fixed seasonal form, possible trend extrapolation, and sensitivity to additive/multiplicative choice.
 - Recommendation: test damped trend, alternative seasonality, or ETS when the basic Holt-Winters structure is restrictive.
@@ -499,12 +550,12 @@ Important current-work correction:
 
 - Explanation of the ETS letters: error, trend, and seasonal components.
 - Automatic search space and selection criterion, normally AICc.
-- Final selected structure, such as `ETS(M,N,A)`, but only after the 80:20 rerun.
-- Whether the trend is absent, present, or damped.
-- Estimated alpha, beta, gamma, and phi where applicable.
-- Transformation and additive-only restrictions, if used.
+- Candidate ETS structures and the selection rule; report the selected structure in Results only after the rerun.
+- Rules for considering absent, present, or damped trend; report the selected trend form in Results.
+- Parameters to be estimated (alpha, beta, gamma, and phi where applicable); report their fitted values in Results.
+- Criteria for transformation and additive-only restrictions; report any applied restriction in Results.
 - Explanation of how ETS differs from the classical Holt-Winters implementation.
-- Residual ACF and Ljung-Box result.
+- Planned residual ACF and Ljung-Box procedure; report the result in Results.
 
 #### Results and discussion must include
 
@@ -519,26 +570,51 @@ Important current-work correction:
 
 - Use comparable response-scale forecast errors. Do not compare multiplicative ETS innovation residual errors directly with response residual errors from other models.
 
-### 6.4 Individual Report 4 - Trend + Season
+### 6.4 Individual Report 4 - Multiple Linear Regression (`trend + season`)
+
+The individual report must use multiple linear regression with both a numerical time trend and categorical monthly seasonal indicators. The lack of a visually obvious trend does not by itself require the trend term to be omitted: the coefficient estimates the underlying linear movement after controlling for recurring month-to-month differences. The simple linear regression `y ~ trend` is excluded because it ignores the obvious seasonal pattern, and the season-only specification is not used for the required model comparison.
+
+| Model | R formula | Statistical form | Justification |
+|---|---|---|---|
+| **Trend + season** | `y ~ trend + season` | $y_t=\beta_0+\beta_1t+\sum_{j=2}^{12}\delta_jD_{j,t}+\varepsilon_t$ | Represents long-term linear movement while controlling for the recurring monthly pattern. |
+
+#### Required modelling procedure
+
+1. Use the time-series plot, monthly seasonal plot or boxplot, and STL decomposition to describe the strength and direction of the trend and the monthly seasonal pattern.
+2. Fit the required model to the 240-month training series:
+
+   ```r
+   trend_season <- tslm(train ~ trend + season)
+   ```
+
+3. Report adjusted $R^2$, coefficient estimates and uncertainty, and rolling-origin cross-validation with a horizon relevant to the project, especially `h = 12`.
+4. Inspect the residual plot, residual ACF, and Ljung-Box result. Seasonal spikes at lags 12 or 24 indicate that the annual pattern has not been adequately represented.
+5. Interpret the trend coefficient even if it is small or statistically uncertain; do not claim a strong trend unless its estimate and uncertainty support that conclusion.
+6. Lock `y ~ trend + season` before using the January 2021-December 2025 test data. Use the common 60-month test period only for final evaluation.
+7. If material residual autocorrelation remains, discuss Multiple Linear Regression with ARIMA errors as the next extension.
+
+The report must include the model formula, adjusted $R^2$, training-period cross-validated RMSE and MAE, Ljung-Box p-value, and the final test-period accuracy measures. It should state clearly that the model retains the trend term while allowing the results to show that the estimated trend may be weak.
 
 #### Methodology must include
 
-- Regression equation with intercept, time trend, and seasonal terms.
-- Definition of the trend index and reference month.
-- Justification for linear trend and month indicators or the selected seasonal representation.
-- Transformation decision.
+- Equation for the trend-and-season multiple linear regression model.
+- Definition of the numerical `trend` index, the categorical `season` variable, its 11 indicators, and the reference month.
+- Justification for retaining both `trend` and `season` in the specified regression formula.
+- Transformation assessment procedure, without an estimated lambda or empirical outcome.
 - Coefficient-estimation method and key assumptions.
-- Significance or uncertainty of important coefficients, without relying only on p-values.
-- Residual ACF and Ljung-Box test to assess remaining time dependence.
-- Decision on whether regression with ARIMA errors would be a better extension.
+- Planned assessment of coefficient uncertainty without relying only on p-values; report estimates and uncertainty in Results.
+- Training-period rolling-origin validation procedure; report its results in Results.
+- Planned residual ACF and Ljung-Box test to assess remaining time dependence; report the outcome in Results.
+- Prespecified criterion for considering regression with ARIMA errors; report the resulting decision in Results.
 
 #### Results and discussion must include
 
 - 60-month test forecast and common accuracy metrics.
-- Interpretation of the trend coefficient and monthly seasonal effects.
-- Strength: direct interpretability and clear month effects.
-- Limitations: fixed linear extrapolation, fixed seasonal effects, correlated residuals, and possible unrealistic long-horizon trend.
-- Recommendation: compare no trend, linear trend, Fourier seasonality, or regression with ARIMA errors using training-only validation.
+- Interpretation of the retained trend coefficient and monthly seasonal effects.
+- Explanation that simple linear regression was excluded because it cannot represent the recurring monthly pattern.
+- Strength: direct interpretation of the time trend and monthly effects.
+- Limitations appropriate to the selected formula, including fixed seasonal effects, fixed linear extrapolation, correlated residuals, or unrealistic long-horizon trend where relevant.
+- Recommendation: consider Fourier seasonality, structural-change terms, or regression with ARIMA errors when supported by training-only validation and residual evidence.
 
 ## 7. Common Tables, Figures, and Files to Produce
 
@@ -625,7 +701,6 @@ The cover-page percentages must reflect actual work. Keep a short contribution l
 - Confirm all four names/IDs and model assignments.
 - Confirm the exact 80:20 dates and document the full comparison against 72:28 and exact 70:30.
 - Lock variable definition, unit, frequency, metrics, and forecast horizons.
-- Decide whether seasonal naive remains as a shared benchmark.
 - Lock the Holt-Winters trend/seasonality specification-selection procedure.
 
 **Gate:** No member begins final writing until the shared design is documented.
@@ -757,7 +832,7 @@ The assignment is complete only when:
 - One IEEE group report and four APA individual reports exist as final PDFs.
 - The entire analysis has been regenerated with the justified 80:20 chronological split using complete 12-month cycles.
 - Every member has one distinct model contribution.
-- The group report contains a fair common comparison of SARIMA, Holt-Winters, ETS, and Trend + Season.
+- The group report contains a fair common comparison of SARIMA, Holt-Winters, ETS, and Multiple Linear Regression (`trend` + `season`).
 - Each individual report demonstrates deep technical understanding of its assigned model.
 - Residual diagnostics and the white-noise decision loop are documented for all four models.
 - All results, claims, tables, figures, and forecasts match reproducible output files.

@@ -1,0 +1,170 @@
+{
+  "input": "C:\\Dev\\statistic-in-data-science-asg\\NASA_Solar_Irradiance_Report.docx",
+  "fonts_by_char_count": {
+    "Times New Roman": 7592
+  },
+  "direct_run_formatting_runs": 141,
+  "direct_paragraph_formatting_paragraphs": 147,
+  "heading_like_paragraphs_not_heading_style": [
+    {
+      "para_index": 1,
+      "text": "TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY",
+      "style": "Normal"
+    },
+    {
+      "para_index": 2,
+      "text": "FACULTY OF COMPUTING AND INFORMATION TECHNOLOGY",
+      "style": "Normal"
+    },
+    {
+      "para_index": 3,
+      "text": "BMMS2094 STATISTICS FOR DATA SCIENCE",
+      "style": "Normal"
+    },
+    {
+      "para_index": 4,
+      "text": "GROUP ASSIGNMENT REPORT",
+      "style": "Normal"
+    },
+    {
+      "para_index": 5,
+      "text": "Forecasting Monthly Solar Irradiance in Kuala Lumpur",
+      "style": "Normal"
+    },
+    {
+      "para_index": 7,
+      "text": "Dataset",
+      "style": "Normal"
+    },
+    {
+      "para_index": 9,
+      "text": "Semester I, Session 2026/2027",
+      "style": "Normal"
+    },
+    {
+      "para_index": 12,
+      "text": "Forecasting Monthly Solar Irradiance in Kuala Lumpur",
+      "style": "Normal"
+    },
+    {
+      "para_index": 14,
+      "text": "ABSTRACT",
+      "style": "Normal"
+    },
+    {
+      "para_index": 17,
+      "text": "I. INTRODUCTION",
+      "style": "Normal"
+    },
+    {
+      "para_index": 19,
+      "text": "II. OBJECTIVES",
+      "style": "Normal"
+    },
+    {
+      "para_index": 21,
+      "text": "III. DATASET AND SDG ALIGNMENT",
+      "style": "Normal"
+    },
+    {
+      "para_index": 26,
+      "text": "IV. DESCRIPTIVE FINDINGS",
+      "style": "Normal"
+    },
+    {
+      "para_index": 28,
+      "text": "V. DATA PREPARATION",
+      "style": "Normal"
+    },
+    {
+      "para_index": 30,
+      "text": "VI. EXPERIMENTAL DESIGN",
+      "style": "Normal"
+    },
+    {
+      "para_index": 36,
+      "text": "VII. FORECAST ACCURACY",
+      "style": "Normal"
+    },
+    {
+      "para_index": 39,
+      "text": "VIII. DIAGNOSTICS",
+      "style": "Normal"
+    },
+    {
+      "para_index": 44,
+      "text": "IX. 2026 FORECAST",
+      "style": "Normal"
+    },
+    {
+      "para_index": 50,
+      "text": "X. DISCUSSION",
+      "style": "Normal"
+    },
+    {
+      "para_index": 52,
+      "text": "XI. LIMITATIONS",
+      "style": "Normal"
+    }
+  ],
+  "examples": {
+    "direct_paragraph_formatting": [
+      {
+        "para_index": 1,
+        "text": "TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "text": "FACULTY OF COMPUTING AND INFORMATION TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "text": "BMMS2094 STATISTICS FOR DATA SCIENCE",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "text": "GROUP ASSIGNMENT REPORT",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "text": "Forecasting Monthly Solar Irradiance in Kuala Lumpur",
+        "style": "Normal"
+      }
+    ],
+    "direct_run_formatting": [
+      {
+        "para_index": 1,
+        "run_text": "TUNKU ABDUL RAHMAN UNIVERSITY OF MANAGEMENT AND TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 2,
+        "run_text": "FACULTY OF COMPUTING AND INFORMATION TECHNOLOGY",
+        "style": "Normal"
+      },
+      {
+        "para_index": 3,
+        "run_text": "BMMS2094 STATISTICS FOR DATA SCIENCE",
+        "style": "Normal"
+      },
+      {
+        "para_index": 4,
+        "run_text": "GROUP ASSIGNMENT REPORT",
+        "style": "Normal"
+      },
+      {
+        "para_index": 5,
+        "run_text": "Forecasting Monthly Solar Irradiance in Kuala Lumpur",
+        "style": "Normal"
+      }
+    ]
+  },
+  "notes": [
+    "Direct formatting is not always wrong, but it often causes inconsistent output when templates change.",
+    "Heading-like paragraphs not using Heading styles can break TOC and accessibility."
+  ]
+}

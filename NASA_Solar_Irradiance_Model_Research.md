@@ -1,18 +1,15 @@
 # NASA Solar-Irradiance Forecasting Models: Explanation and Tuning Guide
 
-> **Implementation update (2026-08-18):** The Holt–Winters model in the R script now sets `beta = FALSE`, so it has no trend component. The persisted model specifications, accuracy results, diagnostics, and forecasts described below were generated before this change and must be regenerated before they represent the updated model.
-
 ## Scope and interpretation
 
 In this repository, “solar radiative” refers to the **NASA POWER monthly solar-irradiance forecasting analysis for Kuala Lumpur**, not to physical radiative-transfer models. The response variable is NASA POWER `ALLSKY_SFC_SW_DWN`: all-sky surface shortwave solar radiation, expressed here in kWh/m²/day. NASA describes all-sky global solar radiation on a horizontal surface as the sum of direct and diffuse radiation, estimated from satellite observations with radiative-transfer methods ([NASA POWER energy-flux methodology](https://power.larc.nasa.gov/docs/methodology/energy-fluxes/)). The repository requests monthly point data for 2001–2025 at latitude 3.1390 and longitude 101.6869; NASA states that its monthly API returns parameter values by year and month and that post-2000 solar parameters are derived primarily from CERES products ([NASA POWER Monthly API](https://power.larc.nasa.gov/docs/services/api/temporal/monthly/)).
 
-The analysis contains exactly **five forecasting models**, defined together in [`NASA_Solar_Irradiance_Forecasting.R`](NASA_Solar_Irradiance_Forecasting.R#L69-L83):
+The analysis contains exactly **four forecasting models**, defined together in [`NASA_Solar_Irradiance_Forecasting.R`](NASA_Solar_Irradiance_Forecasting.R#L69-L83):
 
-1. Seasonal naïve
-2. Trend plus season regression
-3. Additive Holt–Winters
-4. Automatic ETS
-5. Automatic seasonal ARIMA (SARIMA)
+1. Trend plus season regression
+2. Additive Holt–Winters
+3. Automatic ETS
+4. Automatic seasonal ARIMA (SARIMA)
 
 The monthly series has seasonal period `m = 12`. Models are trained through December 2023 and evaluated on the January 2024–December 2025 holdout. The repository ranks them by holdout RMSE, uses that same holdout to select the winning model label, reruns that model class on all 300 observations, and forecasts 2026 ([source lines 64–66 and 163–165](NASA_Solar_Irradiance_Forecasting.R#L64-L66)). Consequently, this is a **selection holdout**, not an untouched final test set from which to claim unbiased future performance.
 
@@ -21,36 +18,13 @@ The monthly series has seasonal period `m = 12`. Models are trained through Dece
 | Model | Fitted specification | Holdout RMSE | Holdout MAE | Role |
 |---|---:|---:|---:|---|
 | SARIMA | ARIMA(1,0,0)(2,1,0)[12] on training data | 0.2013 | 0.1617 | Selected label |
-| Holt–Winters | additive; α=0.0375, β=0.0030, γ=0.1231 | 0.2106 | 0.1681 | Strong alternative |
+| Holt–Winters | additive without trend; α=0.0307, γ=0.1223 | 0.2109 | 0.1685 | Strong alternative |
 | ETS | ETS(M,N,A) | 0.2303 | 0.1932 | State-space exponential smoothing |
 | Trend + season | `y ~ trend + season` | 0.2402 | 0.2009 | Interpretable regression |
-| Seasonal naïve | repeat value from 12 months earlier | 0.2870 | 0.2324 | Benchmark |
 
 Sources: repository-generated [`nasa_model_specifications.csv`](analysis_outputs/nasa/nasa_model_specifications.csv) and [`nasa_model_accuracy.csv`](analysis_outputs/nasa/nasa_model_accuracy.csv). Error units are kWh/m²/day. The current ranking is a fair **head-to-head comparison on the same dates** because every model forecasts the same holdout observations; the forecasting authors likewise note that test-set comparisons remain valid even when candidate models use different differencing structures ([Hyndman & Athanasopoulos, seasonal ARIMA](https://otexts.com/fpp2/seasonal-arima.html)). However, because the lowest holdout RMSE determines the winner, that same RMSE is optimistically biased as an estimate of the selected model’s performance on new unseen years.
 
-## 1. Seasonal naïve
-
-### How it works
-
-For seasonal period `m = 12`, each future month is forecast from the latest observed value for the same calendar month:
-
-$$
-\hat y_{T+h\mid T}=y_{T+h-12(k+1)}, \qquad k=\left\lfloor\frac{h-1}{12}\right\rfloor.
-$$
-
-Thus the February forecast repeats the latest February, the March forecast repeats the latest March, and so on. This is the formal definition given by the authors of the `forecast` package ([simple forecasting methods](https://otexts.com/fpp2/simple-methods.html)). It preserves seasonality but learns no trend, changing seasonal amplitude, or multi-year dependence.
-
-### Tuning
-
-This model has **no learned smoothing or regression parameters**. Its meaningful settings are:
-
-- **Seasonal period `m`**: here fixed correctly at 12 by `ts(..., frequency = 12)`. Changing it changes which past observation is copied.
-- **Forecast horizon `h`**: 24 for holdout evaluation and 12 for the final forecast. It changes how far forecasts are produced, not the fitted rule.
-- **Optional drift**: not part of `snaive()` and not used here. Adding drift would make this a different benchmark and should be justified by a stable long-run trend.
-
-Use seasonal naïve as the minimum standard that a more complex seasonal model should beat. Its holdout MASE of 0.7745 is below 1 because the code scales against average in-sample seasonal-naïve error, while the evaluated seasonal-naïve holdout happens to be easier than the average training transition.
-
-## 2. Trend plus season regression
+## 1. Trend plus season regression
 
 ### How it works
 
@@ -74,38 +48,37 @@ There are no conventional hyperparameters in the current formula; the coefficien
 
 The present model’s strength is interpretation; its weakness is assuming a globally linear trend and an unchanging monthly pattern.
 
-## 3. Additive Holt–Winters
+## 2. Additive Holt–Winters
 
 ### How it works
 
-Holt–Winters updates three latent components: level `ℓ_t`, trend `b_t`, and month-specific seasonality `s_t`. For additive seasonality:
+The configured Holt–Winters model updates two latent components: level `ℓ_t` and month-specific seasonality `s_t`. With `beta = FALSE`, it excludes a trend component. For additive seasonality:
 
 $$
-\hat y_{t+h\mid t}=\ell_t+h b_t+s_{t+h-12(k+1)}.
+\hat y_{t+h\mid t}=\ell_t+s_{t+h-12(k+1)}.
 $$
 
-The components are updated with smoothing parameters α (level), β (trend), and γ (seasonality). Additive seasonality is appropriate when seasonal swings are roughly constant in absolute units; multiplicative seasonality is appropriate when the swing grows in proportion to the series level ([Holt–Winters method and equations](https://otexts.com/fpp2/holt-winters.html)). R’s `stats::HoltWinters()` estimates unspecified parameters by minimizing squared one-step prediction error ([official R documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/HoltWinters.html)).
+The components are updated with smoothing parameters α (level) and γ (seasonality). Additive seasonality is appropriate when seasonal swings are roughly constant in absolute units; multiplicative seasonality is appropriate when the swing grows in proportion to the series level ([Holt–Winters method and equations](https://otexts.com/fpp2/holt-winters.html)). R’s `stats::HoltWinters()` estimates unspecified parameters by minimizing squared one-step prediction error ([official R documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/HoltWinters.html)).
 
 ### Current fit and interpretation
 
-The exported fit has α=0.0375, β=0.0030, and γ=0.1231. These are all small:
+The regenerated fit has α=0.0307 and γ=0.1223. Both are small:
 
-- α=0.0375 gives little weight to the newest seasonally adjusted observation, so the level changes slowly.
-- β=0.0030 makes the slope nearly fixed over time.
-- γ=0.1231 updates seasonal indices modestly; the recurring monthly pattern adapts, but slowly.
+- α=0.0307 gives little weight to the newest seasonally adjusted observation, so the level changes slowly.
+- γ=0.1223 updates seasonal indices modestly; the recurring monthly pattern adapts, but slowly.
 
-This stability is consistent with a climatological monthly series, though the very small trend update should be checked against structural-change diagnostics.
+This stability is consistent with a climatological monthly series. The no-trend specification should still be checked against structural-change diagnostics.
 
 ### Tuning
 
 - **Seasonality type**: compare `seasonal = "additive"` (current) with multiplicative only if seasonal amplitude clearly scales with the level and all values are positive.
-- **α, β, γ**: normally let R optimize them. Manual tuning is defensible only with rolling-origin validation. Values near 1 react quickly; values near 0 smooth heavily.
+- **α and γ**: normally let R optimize them. Manual tuning is defensible only with rolling-origin validation. Values near 1 react quickly; values near 0 smooth heavily. Reintroducing β would change the candidate to a trend model.
 - **Initial states**: `l.start`, `b.start`, `s.start`, and `start.periods` affect initialization, especially for short series. The current defaults estimate initial values from early seasons.
 - **Damping**: base `HoltWinters()` as used here extrapolates trend indefinitely. A damped Holt–Winters/ETS alternative adds φ, usually between 0 and 1, to flatten long-horizon trend; the forecasting text identifies damping as a robust seasonal option ([damped Holt–Winters](https://otexts.com/fpp2/holt-winters.html)).
 - **Optimization controls**: `optim.start` and `optim.control` affect numerical search, not the statistical structure. Change them for convergence problems, not to chase holdout performance.
 - **Transformation and intervals**: the `forecast()` method supports Box–Cox `lambda`, `biasadj`, interval levels, and horizon `h`; the package recommends `ets()` over the legacy `HoltWinters()` interface ([official forecast method](https://pkg.robjhyndman.com/forecast/reference/forecast.HoltWinters.html)).
 
-## 4. Automatic ETS
+## 3. Automatic ETS
 
 ### How it works
 
@@ -132,7 +105,7 @@ The default call already performs model and parameter tuning. Important controls
 
 The exact fitted ETS smoothing coefficients were not exported to CSV, so they should not be guessed. Export `coef(models[["ETS"]]$fit)` in a reproducible rerun if those values are required.
 
-## 5. Automatic SARIMA
+## 4. Automatic SARIMA
 
 ### How it works
 
@@ -187,7 +160,6 @@ Recommended candidate set:
 
 | Model | Candidate settings to validate |
 |---|---|
-| Seasonal naïve | `m=12` baseline only |
 | Trend + season | no trend vs linear trend; month dummies vs low-order Fourier terms; optional Box–Cox |
 | Holt–Winters | additive vs multiplicative seasonality; damped vs undamped trend; optimized α/β/γ |
 | ETS | automatic `ZZZ`; additive-only; fixed plausible structures; default likelihood vs horizon-aligned AMSE |
@@ -197,7 +169,7 @@ Because irradiance is physically non-negative, any model/interval producing mate
 
 ## Important comparability and reproducibility notes
 
-- **Do not compare the exported training MAE/RMSE across all five models as currently calculated.** `residuals()` defaults to innovation residuals; for ETS with multiplicative errors these differ from response residuals (`observed - fitted`). The official documentation explicitly identifies multiplicative-error ETS as a case where innovation and response residuals differ ([`residuals()` reference](https://pkg.robjhyndman.com/forecast/reference/residuals.forecast.html)). This explains why ETS training errors look unusually tiny. For comparable training errors, use `residuals(fit, type = "response")` for every model.
+- **Do not compare the exported training MAE/RMSE across all four models as currently calculated.** `residuals()` defaults to innovation residuals; for ETS with multiplicative errors these differ from response residuals (`observed - fitted`). The official documentation explicitly identifies multiplicative-error ETS as a case where innovation and response residuals differ ([`residuals()` reference](https://pkg.robjhyndman.com/forecast/reference/residuals.forecast.html)). This explains why ETS training errors look unusually tiny. For comparable training errors, use `residuals(fit, type = "response")` for every model.
 - Holdout MAE/RMSE are comparable because the code computes every holdout error directly as actual minus point forecast.
 - Save `sessionInfo()` or a lockfile with the R and `forecast` package versions. Automatic-search results can change across versions.
 - Export the complete fitted parameter sets, AIC/AICc/BIC, convergence status, and chosen transformations. The current specification CSV records model structure but not ETS or ARIMA coefficients.
@@ -206,7 +178,7 @@ Because irradiance is physically non-negative, any model/interval producing mate
 
 ## Bottom line
 
-SARIMA is the current selected label because it has the lowest 2024–2025 selection-holdout RMSE (0.2013), narrowly ahead of additive Holt–Winters (0.2106). This is evidence for a strong annual cycle plus serial dependence, not proof that SARIMA will always dominate, and the winning error is not an unbiased final-test estimate. The most useful next tuning improvement is rolling-origin validation within the pre-2024 period, followed by a locked one-time future-period comparison. The final report should retain seasonal naïve as the benchmark, keep the regression for interpretability, and compare a damped ETS/Holt–Winters candidate against the current exhaustive SARIMA search. It should also persist the final full-data model specification so the 2026 generator is reproducible.
+SARIMA is the current selected label because it has the lowest 2024–2025 selection-holdout RMSE (0.2013), narrowly ahead of additive Holt–Winters (0.2109). This is evidence for a strong annual cycle plus serial dependence, not proof that SARIMA will always dominate, and the winning error is not an unbiased final-test estimate. The most useful next tuning improvement is rolling-origin validation within the pre-2024 period, followed by a locked one-time future-period comparison. The final report should keep the regression for interpretability and compare a damped ETS/Holt–Winters candidate against the current exhaustive SARIMA search. It should also persist the final full-data model specification so the 2026 generator is reproducible.
 
 ## Primary sources
 
@@ -219,7 +191,6 @@ SARIMA is the current selected label because it has the lowest 2024–2025 selec
 - [Official R documentation: `HoltWinters()`](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/HoltWinters.html)
 - [Official `forecast` package: `ets()`](https://pkg.robjhyndman.com/forecast/reference/ets.html)
 - [Official `forecast` package: `auto.arima()`](https://pkg.robjhyndman.com/forecast/reference/auto.arima.html)
-- [Hyndman & Athanasopoulos: seasonal naïve](https://otexts.com/fpp2/simple-methods.html)
 - [Hyndman & Athanasopoulos: Holt–Winters](https://otexts.com/fpp2/holt-winters.html)
 - [Hyndman & Athanasopoulos: ETS state-space models](https://otexts.com/fpp2/ets.html)
 - [Hyndman & Athanasopoulos: seasonal ARIMA](https://otexts.com/fpp2/seasonal-arima.html)

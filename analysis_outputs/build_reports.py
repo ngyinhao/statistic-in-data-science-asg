@@ -313,8 +313,8 @@ def save_report(doc, path):
 
 def report_ev():
     base = OUT / "ev"
-    acc = rows(base / "ev_model_accuracy.csv")
-    diag = {r["Model"]: r for r in rows(base / "ev_residual_diagnostics.csv")}
+    acc = [r for r in rows(base / "ev_model_accuracy.csv") if r["Model"] != "Seasonal naive"]
+    diag = {r["Model"]: r for r in rows(base / "ev_residual_diagnostics.csv") if r["Model"] != "Seasonal naive"}
     desc = by_key(base / "ev_descriptive_statistics.csv")
     fc = rows(base / "ev_final_forecast.csv")
     best = acc[0]
@@ -330,7 +330,7 @@ def report_ev():
     add_para(doc,
         f"This study forecasts monthly battery-electric car registrations in Singapore using current Land Transport Authority data. "
         f"After restricting fuel type to Electric and excluding structural blank cells, the usable series contained {desc['Observations']} observations from "
-        f"{desc['First month']} to {desc['Last month']}. Four course-aligned forecasting models and a seasonal-naive benchmark were assessed on the final 12 months. "
+        f"{desc['First month']} to {desc['Last month']}. Four course-aligned forecasting models were assessed on the final 12 months. "
         f"{best['Model']} achieved the lowest RMSE ({fmt(best['RMSE'],1)}) and MAE ({fmt(best['MAE'],1)}), while its Ljung-Box p-value of "
         f"{fmt(diag[best['Model']]['Ljung_Box_p_value'],3)} indicated no detected residual autocorrelation at the tested lag. Forecasts suggest continued growth but widening uncertainty. "
         "The results can support charging and transport-capacity planning, but registrations are not direct measurements of emissions reductions.")
@@ -358,7 +358,7 @@ def report_ev():
         "The R pipeline downloads and preserves the official ZIP, checks the six-field schema, parses monthly dates, audits duplicate composite keys, filters fuel_type == \"Electric\", removes blank numeric combinations, aggregates across make, importer and vehicle type, and checks calendar continuity. No composite-key duplicates or internal missing months were found.")
     add_heading(doc, "VI. Experimental design")
     add_para(doc,
-        "July 2022-July 2025 formed the training set and August 2025-July 2026 the untouched test set. Member 1 contributes trend-plus-season regression; Member 2 additive Holt-Winters; Member 3 ETS; and Member 4 Box-Jenkins SARIMA. Seasonal naive is the shared benchmark. Models are compared using MAE, RMSE, MAPE, MASE and sMAPE, followed by residual ACF and Ljung-Box checks.")
+        "July 2022-July 2025 formed the training set and August 2025-July 2026 the untouched test set. Member 1 contributes trend-plus-season regression; Member 2 additive Holt-Winters; Member 3 ETS; and Member 4 Box-Jenkins SARIMA. Models are compared using MAE, RMSE, MAPE, MASE and sMAPE, followed by residual ACF and Ljung-Box checks.")
     add_para(doc,
         "ARIMA stabilisation: the rising EV level was handled inside the ARIMA candidate by one ordinary difference, Delta y(t) = y(t) - y(t-1). Auto-selection produced ARIMA(0,1,2) with drift: d = 1 removes the non-stationary level, the drift retains the average direction of growth, and D = 0 means that no seasonal difference was retained. This transformation applies to the ARIMA candidate only; Holt-Winters, ETS and regression use their own trend and seasonal structures.")
     add_image(doc, base / "figures" / "ev_decomposition_diagnostics.png",
@@ -374,12 +374,11 @@ def report_ev():
     add_para(doc,
         f"{best['Model']} ranked first with RMSE {fmt(best['RMSE'],1)}, MAE {fmt(best['MAE'],1)}, MAPE {fmt(best['MAPE'],2)}% and MASE {fmt(best['MASE'],3)}. "
         f"Its training RMSE was {fmt(best['Training_RMSE'],1)} versus test RMSE {fmt(best['RMSE'],1)}. SARIMA was second on the test set (RMSE {fmt(acc[1]['RMSE'],1)}). "
-        f"Training values are in-sample residual errors, whereas test values are genuine unseen-period forecast errors; therefore the model ranking uses test RMSE. "
-        f"The seasonal-naive benchmark produced test RMSE {fmt(acc[-1]['RMSE'],1)}, so the selected model substantially improved on repeating last year's values.")
+        f"Training values are in-sample residual errors, whereas test values are genuine unseen-period forecast errors; therefore the model ranking uses test RMSE.")
     add_heading(doc, "VIII. Diagnostics")
     add_para(doc,
         f"The selected model's Ljung-Box statistic was {fmt(diag[best['Model']]['Ljung_Box_statistic'],2)} with p = {fmt(diag[best['Model']]['Ljung_Box_p_value'],3)}. "
-        "At the chosen lag, the null hypothesis of uncorrelated residuals was not rejected. Trend-plus-season and seasonal-naive residuals retained significant dependence, weakening their suitability despite interpretability.")
+        "At the chosen lag, the null hypothesis of uncorrelated residuals was not rejected. Trend-plus-season residuals retained significant dependence, weakening its suitability despite interpretability.")
     add_image(doc, base / "figures" / "ev_test_forecasts.png",
               "Fig. 3. Training history and common 12-month test forecasts. The dashed line marks the train-test split; coloured lines are model forecasts and black is observed data.")
 
@@ -401,7 +400,7 @@ def report_ev():
     add_page_break(doc)
     add_heading(doc, "X. Discussion")
     add_para(doc,
-        "The evidence is consistent with a rapidly expanding battery-electric car market. Forecast growth can help agencies and operators stress-test charging-point rollout, electrical capacity, servicing and registration workflows. The strong result for Holt-Winters suggests that locally evolving level, trend and seasonal effects captured the holdout better than a fixed seasonal repeat or a nonseasonal ETS specification.")
+        "The evidence is consistent with a rapidly expanding battery-electric car market. Forecast growth can help agencies and operators stress-test charging-point rollout, electrical capacity, servicing and registration workflows. The strong result for Holt-Winters suggests that locally evolving level, trend and seasonal effects captured the holdout better than the nonseasonal ETS specification.")
     add_heading(doc, "XI. Limitations")
     add_para(doc,
         "Only 49 monthly EV observations were available, leaving three years of training data after reserving a 12-month test. Structural change, incentives, COE conditions, model availability and COVID-era recovery are not causal regressors. LTA registrations exclude taxis and measure new registrations rather than fleet usage, electricity source, lifecycle emissions or avoided emissions. Prediction intervals reflect model uncertainty, not every policy or supply shock.")
@@ -424,8 +423,8 @@ def report_ev():
 
 def report_nasa():
     base = OUT / "nasa"
-    acc = rows(base / "nasa_model_accuracy.csv")
-    diag = {r["Model"]: r for r in rows(base / "nasa_residual_diagnostics.csv")}
+    acc = [r for r in rows(base / "nasa_model_accuracy.csv") if r["Model"] != "Seasonal naive"]
+    diag = {r["Model"]: r for r in rows(base / "nasa_residual_diagnostics.csv") if r["Model"] != "Seasonal naive"}
     desc = by_key(base / "nasa_descriptive_statistics.csv")
     climate = rows(base / "nasa_monthly_climatology.csv")
     fc = rows(base / "nasa_final_forecast.csv")
@@ -443,7 +442,7 @@ def report_nasa():
     add_heading(doc, "Abstract")
     add_para(doc,
         f"This study forecasts monthly all-sky surface shortwave downward irradiance for Kuala Lumpur using {desc['Observations']} NASA POWER observations from "
-        f"{desc['First month']} to {desc['Last month']}. Four course-aligned models and a seasonal-naive benchmark were evaluated on 2024-2025. "
+        f"{desc['First month']} to {desc['Last month']}. Four course-aligned models were evaluated on 2024-2025. "
         f"{best['Model']} achieved the lowest RMSE ({fmt(best['RMSE'],3)} kWh/m2/day), MAE ({fmt(best['MAE'],3)}) and MAPE ({fmt(best['MAPE'],2)}%). "
         f"Its residual Ljung-Box p-value was {fmt(diag[best['Model']]['Ljung_Box_p_value'],3)}. The 2026 forecast preserves pronounced seasonal resource variation. "
         "The results can support preliminary solar planning but do not represent site-specific generation or climate-change attribution.")
@@ -471,11 +470,11 @@ def report_nasa():
         "The R script retrieves and preserves the official JSON, extracts monthly parameter values, removes YYYY13 annual records, converts YYYYMM keys to dates, maps -999 to missing, and checks the expected 300-month calendar, duplicates, gaps and physical range. No interpolation was required.")
     add_heading(doc, "VI. Experimental design")
     add_para(doc,
-        "January 2001-December 2023 formed the training set; January 2024-December 2025 was an untouched 24-month test. Member assignments are trend-plus-season regression, additive Holt-Winters, ETS, and SARIMA. Seasonal naive is shared. Accuracy is assessed with MAE, RMSE, MAPE, MASE and sMAPE, followed by residual ACF and Ljung-Box diagnostics.")
+        "January 2001-December 2023 formed the training set; January 2024-December 2025 was an untouched 24-month test. Member assignments are trend-plus-season regression, additive Holt-Winters, ETS, and SARIMA. Accuracy is assessed with MAE, RMSE, MAPE, MASE and sMAPE, followed by residual ACF and Ljung-Box diagnostics.")
     add_para(doc,
         "SARIMA stabilisation: the selected ARIMA(1,0,0)(2,1,0)[12] uses d = 0 because no ordinary trend difference was selected, but D = 1 applies the seasonal difference Delta[12] y(t) = y(t) - y(t-12). This removes the repeating annual level before the autoregressive terms are estimated. The period [12] represents monthly data with one yearly cycle; forecasts are subsequently returned to the original kWh/m2/day scale.")
     add_image(doc, base / "figures" / "nasa_decomposition_diagnostics.png",
-              "Fig. 2. STL decomposition and autocorrelation of solar irradiance.", width=3.22)
+              "Fig. 2. STL decomposition and autocorrelation of the STL remainder.", width=3.22)
 
     add_page_break(doc)
     add_heading(doc, "VII. Forecast accuracy")
@@ -487,12 +486,11 @@ def report_nasa():
     add_para(doc,
         f"{best['Model']} ranked first with RMSE {fmt(best['RMSE'],3)}, MAE {fmt(best['MAE'],3)}, MAPE {fmt(best['MAPE'],2)}% and MASE {fmt(best['MASE'],3)}. "
         f"Its training RMSE was {fmt(best['Training_RMSE'],3)} versus test RMSE {fmt(best['RMSE'],3)}. Holt-Winters was close behind on the test set with RMSE {fmt(acc[1]['RMSE'],3)}. "
-        f"Training figures are in-sample residual errors, while test figures measure forecasts for unseen months; model selection therefore uses test RMSE. "
-        f"Seasonal naive had test RMSE {fmt(acc[-1]['RMSE'],3)}, indicating that modelling dependence beyond a fixed annual repeat improved accuracy.")
+        f"Training figures are in-sample residual errors, while test figures measure forecasts for unseen months; model selection therefore uses test RMSE.")
     add_heading(doc, "VIII. Diagnostics")
     add_para(doc,
         f"The selected {best['Model']} specification was ARIMA(1,0,0)(2,1,0)[12]. Its Ljung-Box statistic was {fmt(diag[best['Model']]['Ljung_Box_statistic'],2)} with p = "
-        f"{fmt(diag[best['Model']]['Ljung_Box_p_value'],3)}, providing no evidence of residual autocorrelation at lag {diag[best['Model']]['Ljung_Box_lag']}. The seasonal-naive residuals remained strongly autocorrelated.")
+        f"{fmt(diag[best['Model']]['Ljung_Box_p_value'],3)}, providing no evidence of residual autocorrelation at lag {diag[best['Model']]['Ljung_Box_lag']}.")
     add_image(doc, base / "figures" / "nasa_test_forecasts.png",
               "Fig. 3. Training history and common 24-month test forecasts. The dashed line marks the train-test split; coloured lines are model forecasts and black is observed data.")
 

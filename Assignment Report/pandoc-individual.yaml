@@ -1,0 +1,15 @@
+from: markdown+raw_attribute
+standalone: true
+citeproc: true
+filters:
+  - ieee-tables.lua
+reference-doc: IEEE-conference-reference.docx
+bibliography: references.bib
+csl: ieee.csl
+resource-path:
+  - .
+  - ..
+metadata:
+  link-citations: true
+  table-caption-position: above
+  number-sections: false
