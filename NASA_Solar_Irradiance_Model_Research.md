@@ -152,7 +152,7 @@ The present two-year holdout provides a useful model comparison, but because it 
 1. On data through December 2023, use rolling-origin cross-validation with horizons that match the decision (especially `h=12`, optionally `h=1:24`) to choose structures and hyperparameters.
 2. Lock every candidate and selection rule before evaluating January 2024–December 2025 once. If that period has already influenced tuning, reserve a later period or report the result explicitly as selection performance rather than unbiased test performance.
 3. Define a small, scientifically plausible candidate grid for each model class.
-4. Rank primarily by horizon-appropriate RMSE/MAE and MASE; use AICc only for choosing structures within a likelihood model, not across unrelated model classes.
+4. Report ME, MSE, RMSE, MAE, MPE, and MAPE on the common horizon. Rank primarily by horizon-appropriate RMSE/MAE, use ME/MPE to diagnose signed bias, and use AICc only for choosing structures within a likelihood model, not across unrelated model classes.
 5. Reject candidates with implausible solar forecasts, unstable parameters, or materially autocorrelated residuals.
 6. Lock the tuning choice, evaluate once on the final holdout, then refit the chosen specification to all observations for the 2026 forecast.
 

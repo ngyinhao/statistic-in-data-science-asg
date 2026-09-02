@@ -1,5 +1,5 @@
 ---
-title: "ETS State-Space Forecasting of Monthly Solar Irradiance"
+title: "Forecasting Monthly Solar Irradiance in Kuala Lumpur"
 lang: en-GB
 ---
 
@@ -18,7 +18,7 @@ Assigned model: Error–Trend–Seasonal state-space model · Submission date: [
 ```
 
 ::: {custom-style="Abstract"}
-**Abstract—**This report evaluates an ETS state-space model for monthly NASA POWER surface solar irradiance in Kuala Lumpur. Automatic selection produced ETS(A,N,A), which achieved test RMSE 0.2947 and passed the declared residual diagnostic threshold, placing a close second to SARIMA.
+**Abstract—**This report evaluates an ETS state-space model for monthly NASA POWER surface solar irradiance in Kuala Lumpur. Automatic selection produced ETS(A,N,A), which achieved test RMSE 0.2947 and passed the declared residual diagnostic threshold.
 :::
 
 ::: {custom-style="Keywords"}
@@ -31,39 +31,49 @@ This report proposes evaluating ETS for the monthly Kuala Lumpur NASA POWER irra
 
 The chronological design would use January 2001–December 2020 for training and January 2021–December 2025 for a single final test. Complete annual cycles were retained to protect seasonal estimation, while random splitting and half-year boundaries were rejected. Transformation would be assessed using training data only, with a common response scale preferred when diagnostics did not require otherwise.
 
-The unrestricted automatic call `ets(train)` would search the standard ETS error, trend, damping, and seasonal structures. AICc would be used only to compare candidates within the ETS family, not against unrelated model likelihoods. The selected structure, smoothing coefficients, and any applicable damping parameter would be reported and interpreted in the results.
+The unrestricted automatic call `ets(train)` would deliberately search the standard ETS error, trend, damping, and seasonal structures rather than impose an unsupported component restriction. Retaining this broad search is justified by uncertainty about the appropriate state-space form, not merely because it is the software default. The training time plot, STL components, and variance evidence would establish plausible forms, while minimum AICc would select among fitted ETS candidates. The selected structure would then have to pass residual and physical-plausibility checks. Component forms are selected settings; α, β, γ, and φ, when applicable, are jointly estimated by likelihood rather than manually chosen.
 
-To preserve cross-model comparability, diagnostics would use response residuals (`observed − fitted`) rather than multiplicative innovations [@forecast-residuals]. Residual time plots, ACF, and a lag-24 Ljung–Box test with the applicable fitted degrees of freedom would determine whether a specification loop-back was needed.
+Diagnostics would use response residuals (`observed − fitted`) so that departures remained interpretable on the original response scale rather than as multiplicative innovations [@forecast-residuals]. Residual time plots, ACF, and a lag-24 Ljung–Box test with the applicable fitted degrees of freedom would determine whether a specification loop-back was needed. Training and test performance would be reported consistently using ME, MSE, RMSE, MAE, MPE, and MAPE, together with each test-minus-training difference. ME and MPE would be judged by closeness to zero and sign; the remaining error measures would be minimised.
 
-# Results, Discussion, and Conclusion
+# Data Analysis
 
-The automatic search selected ETS(A,N,A), with additive errors, no trend, and additive seasonality (AICc=729.156). The fitted smoothing coefficients were α=0.02036 and γ=0.0001005; β and damping φ did not apply. At lag 24 with two fitted smoothing degrees of freedom, Ljung–Box gave $Q=32.326$, $p=.072$, so residual white noise was not rejected at 5%, although the result warrants monitoring.
+**Training evidence and model identification—**The 2001–2020 time plot and STL decomposition indicated pronounced annual seasonality of roughly stable absolute amplitude and comparatively modest trend movement. Stable absolute amplitude supported additive seasonal candidates and retention of the response scale; modest movement made no-trend candidates plausible. These plots did not select the final form by themselves. An unrestricted error–trend–season search was retained so additive and multiplicative errors, absent or present trend, damping, and seasonal forms could compete; minimum training AICc, followed by residual and plausibility gates, was the declared criterion.
 
-| Test metric | Value |
-|---|---:|
-| RMSE (kWh/m²/day) | 0.2947 |
-| MAE (kWh/m²/day) | 0.2351 |
-| MAPE | 4.9673% |
-| MASE | 0.7920 |
-| sMAPE | 4.8996% |
-| Ljung–Box p-value | 0.0720 |
+![Training-only time series and STL components used for model identification.](../analysis_outputs/nasa/figures/nasa_training_identification.png){width=3.20in}
+
+```{=openxml}
+<w:p><w:r><w:br w:type="column"/></w:r></w:p>
+```
+
+The search selected ETS(A,N,A), with additive errors, no trend, and additive seasonality, because it minimised AICc within the searched family (729.156) and remained physically plausible. Additive error and seasonality are also consistent with response-scale variation, while no trend avoids unsupported long-run extrapolation. Maximum-likelihood optimisation fitted α=0.02036 and γ=0.0001005; neither was manually selected. The small α implies slow level updating, and γ near its lower boundary implies that the estimated monthly seasonal states are almost fixed. β and damping φ were not estimated because the selected structure contained no trend. Lag 24 examines two annual cycles and uses two fitted smoothing degrees of freedom; Ljung–Box gave $Q=32.326$, $p=0.072$, so white noise was not rejected, although the near-threshold result and boundary γ warrant constrained-model sensitivity checks.
+
+| Metric | Training | Test | Test − training |
+|---|---:|---:|---:|
+| ME (kWh/m²/day) | 0.0065 | −0.0847 | −0.0912 |
+| MSE ((kWh/m²/day)²) | 0.0760 | 0.0869 | 0.0108 |
+| RMSE (kWh/m²/day) | 0.2758 | 0.2947 | 0.0190 |
+| MAE (kWh/m²/day) | 0.2141 | 0.2351 | 0.0210 |
+| MPE | −0.2058% | −2.0546% | −1.8488 pp |
+| MAPE | 4.5392% | 4.9673% | 0.4281 pp |
+
+The lag-24 Ljung–Box p-value was 0.0720. The negative test ME and MPE indicate average overforecasting under the `actual − forecast` convention. Training–test differences are descriptive because fitted residuals and multi-step holdout errors come from different evaluation settings.
 
 ![ETS test forecasts with 95% intervals.](../analysis_outputs/nasa/figures/nasa_ets_test_forecast.png){width=3.20in}
 
-ETS ranked second. Its RMSE exceeded SARIMA by only 0.0019 kWh/m²/day (0.65%), so performance was practically very close; its MAE was 0.0106 higher. Strengths include a transparent selected structure, probabilistic intervals, and stable additive seasonality. Limitations are the near-boundary γ estimate, a residual p-value close to 0.05, limited explanation of automatic selection, and vulnerability to structural change when seasonal states barely update.
+ETS achieved test RMSE 0.2947 and MAE 0.2351, while its residual white-noise result remained just above the 5% threshold. Strengths include a transparent selected structure, probabilistic intervals, and stable additive seasonality. Limitations are the near-boundary γ estimate, a residual p-value close to 0.05, limited explanation of automatic selection, and vulnerability to structural change when seasonal states barely update.
 
-ETS(A,N,A) is suitable and a strong alternative, but SARIMA was retained under the declared primary/secondary ranking. Recommended extensions are constrained ETS comparisons, rolling-origin evaluation, Box–Cox sensitivity analysis, and forecast combinations. Forecast intervals should accompany planning decisions, and irradiance should not be equated with electricity output.
+# Conclusion
 
-::: {custom-style="Heading 5"}
-References
-:::
+ETS(A,N,A) is suitable for the observed series and test period: RMSE was 0.2947, MAE was 0.2351, and the lag-24 Ljung–Box test did not reject residual white noise. Its AICc-selected additive state-space structure and probabilistic intervals are strengths, but the near-boundary γ and p-value close to 0.05 indicate limited seasonal adaptation and residual uncertainty. Constrained ETS comparisons, rolling-origin evaluation, and Box–Cox sensitivity analysis are therefore recommended. Forecast intervals should accompany planning decisions, and irradiance should not be equated with electricity output.
+
+# References
 
 ::: {#refs}
 :::
 
-::: {custom-style="Heading 5"}
-Appendix A: Reproducible ETS Code
-:::
+# Appendix
+
+## Appendix A: Reproducible ETS Code
 
 Canonical source: `../NASA_Solar_Irradiance_Forecasting.R`. No random procedure is used.
 

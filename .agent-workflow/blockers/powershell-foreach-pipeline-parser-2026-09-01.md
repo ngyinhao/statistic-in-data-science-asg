@@ -23,3 +23,9 @@ Accumulate objects in an array inside the loop, then pipe the completed array to
 ## Prevention
 
 Use `ForEach-Object` for pipeline-native iteration or explicitly collect statement-loop results before piping.
+
+## Recurrence on 2026-09-02
+
+The same statement-form `foreach (...) { ... } | Format-Table` pattern was reused while counting rendered pages for the four updated individual reports and produced the same parser error. No files were changed. The validated fix remains to collect objects in an array and pipe the completed array afterward.
+
+A second recurrence occurred during read-only DOCX XML inspection when a statement-form loop was again followed directly by `| Format-Table`. It produced the same parser error and changed no files. This repeated failure confirms that inspection snippets should initialize `$rows = @()`, append inside the loop, and format `$rows` only after the loop closes.

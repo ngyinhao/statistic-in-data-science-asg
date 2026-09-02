@@ -133,6 +133,25 @@ Every important analytical decision must be explained through the following six-
 5. **State and justify the selected option.** Give the exact model, parameter, split, transformation, or diagnostic setting and connect it directly to the evidence.
 6. **Explain the consequence and limitation.** State how the decision affects estimation, forecasts, interpretation, comparability, or uncertainty, and acknowledge any remaining weakness.
 
+### Parameter-justification and non-default modification standard
+
+No report may present a model specification, tuning setting, or software default as self-justifying. For every structural choice or modification—including transformation, differencing, AR/MA order, seasonal period, trend inclusion or removal, damping, additive or multiplicative form, candidate-search restriction, reference category, diagnostic lag, forecast horizon, and any argument changed from its software default—the report must:
+
+1. identify the parameter or setting and whether it was fixed, searched, or estimated;
+2. state the reasonable alternatives considered;
+3. cite relevant training-only evidence, such as the time plot, seasonal-amplitude pattern, STL components, transformation or stationarity diagnostics, ACF/PACF, candidate AICc, coefficient uncertainty, rolling-origin validation, convergence, or residual diagnostics;
+4. state the decision criterion and explain why the retained value or form satisfied it;
+5. explain the modelling consequence and disclose any important limitation or sensitivity; and
+6. name any retained software default and justify why it was appropriate instead of relying on the fact that it was the default.
+
+Distinguish **selected settings** from **fitted coefficients**. Orders, component forms, restrictions, and search options are selected analytical settings and require the evidence chain above. Numerical coefficients such as AR/MA terms, smoothing coefficients, and regression coefficients are normally estimated jointly from the training data by likelihood, least squares, or optimisation; they must not be described as if the analyst manually selected each value. For fitted coefficients, state the estimation method or objective, report estimates and uncertainty where available, interpret their practical meaning, and flag boundary values, weakly supported terms, or instability. Do not invent post-hoc reasons for optimizer-produced values.
+
+If a required specification is imposed by the assignment rather than chosen empirically, state that constraint explicitly, provide the substantive rationale that still applies, and use diagnostics or validation to evaluate its consequences. Test-period accuracy must not be used retrospectively to justify a parameter or modification that was supposed to be locked using training data.
+
+### Numerical presentation standard for all reports
+
+Always include a leading zero when reporting a decimal value whose absolute value is less than one. This rule applies consistently to prose, equations, tables, figure annotations, coefficients, standard errors, accuracy measures, probabilities, p-values, and threshold comparisons in both the group report and all four individual reports. Correct forms include `0.5358`, `−0.4147`, `$p=0.148$`, and `$p<0.001$`; never drop the zero immediately before the decimal point. Apply the same convention in the Markdown sources and in every generated submission document.
+
 Apply this sequence to:
 
 - Dataset inclusion and cleaning decisions.
@@ -248,7 +267,8 @@ Decision rule:
 
 - Generate 60 monthly point forecasts for January 2021 to December 2025.
 - Include 80% and 95% prediction intervals where the model supports them.
-- Calculate the same test measures for all four models: **RMSE, MAE, MAPE, MASE, and sMAPE**.
+- Calculate the same test measures for all four models: **ME, MSE, RMSE, MAE, MPE, and MAPE**. Use `actual − forecast` throughout; ME and MPE are best when closest to zero, whereas MSE, RMSE, MAE, and MAPE are best when lowest.
+- For each individual report, calculate the same six measures from response-scale training residuals and from the locked test forecasts, then report **test minus training** for every measure. Express MPE and MAPE differences in percentage points and treat the comparison as descriptive because fitted residuals and multi-step holdout errors use different evaluation designs.
 - Use **test RMSE as the primary ranking measure** and **test MAE as the secondary measure**.
 - Also consider residual validity, interval behavior, stability, and physical plausibility. Do not select a numerically best model if it is diagnostically invalid or produces implausible forecasts.
 - Present one common comparison table and one common forecast-versus-actual figure.
@@ -334,7 +354,7 @@ Suggested objectives:
 
 1. Validate and describe the monthly NASA POWER solar-irradiance series.
 2. Fit and diagnose SARIMA, Holt-Winters, ETS, and Multiple Linear Regression (`trend` + `season`) models.
-3. Compare all four models on a common 80:20 chronological test, selected after evaluating seasonal integrity, training adequacy, test adequacy, and forecast relevance, using RMSE, MAE, MAPE, MASE, and sMAPE.
+3. Compare all four models on a common 80:20 chronological test, selected after evaluating seasonal integrity, training adequacy, test adequacy, and forecast relevance, using ME, MSE, RMSE, MAE, MPE, and MAPE.
 4. Interpret the selected forecast for preliminary solar-resource planning and SDG 7 while acknowledging data and engineering limitations.
 
 #### Methodology
@@ -361,7 +381,7 @@ Include:
 
 - One main data visualization showing trend/seasonality and the split.
 - A concise descriptive summary of the series.
-- One comparison table containing the four model specifications, test RMSE, MAE, MAPE, MASE, sMAPE, and Ljung-Box p-value.
+- One comparison table containing the four model specifications, test ME, MSE, RMSE, MAE, MPE, MAPE, and Ljung-Box p-value.
 - One common test forecast-versus-actual chart for all four models.
 - Optional: one small residual-diagnostic panel for the selected model.
 - Rank models based on regenerated 80:20 test results.
@@ -388,7 +408,7 @@ Each member must determine and lock the specification of the assigned model usin
 1. Treat diagnostic validity and physical plausibility as eligibility conditions. Flag a model if its residuals retain material autocorrelation, its estimates are unstable, or its forecasts or intervals contain implausible solar-irradiance values.
 2. Among acceptable models, use **test RMSE as the primary ranking measure** because it penalizes larger forecast errors more heavily.
 3. Use **test MAE as the secondary measure** because it expresses the typical absolute forecast error in the original unit and is less sensitive to a few large errors.
-4. Use MAPE, MASE, and sMAPE as supporting measures rather than allowing one of them to override the declared RMSE/MAE rule without justification.
+4. Use ME and MPE to assess signed bias by closeness to zero, and use MSE and MAPE as supporting measures rather than allowing one measure to override the declared RMSE/MAE rule without justification. Because MSE and RMSE induce the same ranking, do not count them as independent votes in a composite score.
 5. Compare prediction-interval behavior, stability, interpretability, and the size of the improvement over the next-best model. Discuss whether the difference is practically meaningful rather than only reporting ranks.
 6. Do not select a numerically first-ranked model if its diagnostics or forecasts are unacceptable. If the lowest-RMSE model fails an eligibility condition, select the next defensible model and state the reason transparently.
 7. After selection, refit the **locked specification** of the winning model to all 300 observations and use that refitted model for the 2026 forecast. Keep this future forecast separate from the 60-month test evaluation.
@@ -438,6 +458,16 @@ Include:
 
 ### 5.2 Standard structure for every individual report
 
+Every individual-report Markdown file must use the following five top-level sections in this exact order after the cover material:
+
+1. `# Methodology`
+2. `# Data Analysis`
+3. `# Conclusion`
+4. `# References`
+5. `# Appendix`
+
+The Data Analysis and Conclusion sections must remain separate. Model identification, fitted results, diagnostics, forecasts, accuracy measures, interpretation, strengths, and limitations belong in Data Analysis. The final suitability judgement, recommendations, and closing implications belong in Conclusion. References and Appendix must be explicit Markdown headings rather than styled text blocks.
+
 #### Cover page - excluded from the two-page content limit
 
 Include:
@@ -451,7 +481,7 @@ Include:
 
 #### Page 1 - Methodology
 
-Keep this proposal-stage section procedural. Dataset-design facts and prespecified rules are allowed, but all observed summaries, estimates, selected specifications, test statistics, fitted diagnostics, accuracy values, forecasts, and model rankings belong on Page 2 under Results, Discussion, and Conclusion.
+Keep this proposal-stage section procedural. Dataset-design facts and prespecified rules are allowed, but all observed summaries, estimates, selected specifications, test statistics, fitted diagnostics, accuracy values, forecasts, and model rankings belong on Page 2 under Data Analysis.
 
 Include:
 
@@ -461,23 +491,43 @@ Include:
 - Planned transformation assessment, without an estimated Box-Cox value.
 - Exact 80:20 chronological split, its selection rationale, and seasonal frequency 12.
 - Candidate-selection process following Steps 1-6 of the supplied workflow.
-- Candidate specification and training-only selection procedure; report the selected specification and estimated parameters in Results.
+- Candidate specification and training-only selection procedure; report the selected specification and estimated parameters in Data Analysis.
+- Parameter-justification procedure: identify which settings will be fixed, searched, or estimated; list meaningful alternatives; and state the training-only evidence and criterion used for every non-default modification. Retained software defaults must also be named and justified.
 - Software function and important arguments.
-- Planned residual diagnostics and white-noise decision rule; report the diagnostic outcome in Results.
+- Planned residual diagnostics and white-noise decision rule; report the diagnostic outcome in Data Analysis.
 - Evaluation measures used.
 
-#### Page 2 - Results, discussion, and conclusion
+#### Individual-report evidence-ordering rule
+
+This rule applies to the four **individual reports**, not to the group report's internal section order. Each individual report must distinguish the prespecified decision process from the empirical evidence and outcome:
+
+1. **Methodology defines the decision rule.** State which training-only plots, diagnostics, candidate models, and formal criteria will be used. For example, specify that additive seasonality is favoured when seasonal amplitude is approximately constant in response units, whereas multiplicative seasonality is considered when amplitude changes proportionally with the series level. Do not state the observed STL pattern, selected form, fitted parameter values, or test outcome here.
+2. **Data Analysis begins with model identification.** Before presenting the selected specification or parameter estimates, show or summarise the January 2001-December 2020 time-series and STL evidence and explain how it informed the assigned model. Use the compact training-only time-series/STL figure where space permits.
+3. **State the decision immediately after its evidence.** Link the observed training pattern and any formal criterion to the selected model form, then present fitted parameters, residual diagnostics, test forecasts, accuracy, and critical interpretation in Data Analysis. Place the final suitability judgement and recommendations in the separate Conclusion section.
+4. **Do not use the test period for identification.** The complete-series plots may remain in the group report for retrospective description, but evidence used to lock an individual specification must exclude January 2021-December 2025.
+5. **Do not treat STL as the sole selection test.** STL is descriptive and additive in form. Combine it with the original time plot, seasonal-amplitude or variance evidence, transformation diagnostics, family-specific tests or information criteria, and training-only validation where applicable.
+
+**Technical warning about the current figures:** `analysis_outputs/nasa/figures/nasa_decomposition_diagnostics.png` was generated from the complete January 2001-December 2025 series. Because it includes the January 2021-December 2025 test period, it may be retained in the group report only as a retrospective whole-series description; it must not be reused as evidence that determined an individual model's specification. The individual reports must instead use `analysis_outputs/nasa/figures/nasa_training_identification.png`, generated exclusively from the January 2001-December 2020 training series, whenever the time plot or STL components are used to justify model identification.
+
+The intended individual-report sequence is therefore:
+
+> Methodology → Data Analysis (training-only evidence → selected specification and parameters → residual diagnostics → test forecast and accuracy → critical interpretation) → Conclusion → References → Appendix.
+
+#### Page 2 - Data Analysis and Conclusion
 
 Include:
 
+- A short opening model-identification paragraph based only on the training period, followed by the selected specification. The evidence must precede the specification it supports.
+- A concise parameter-rationale paragraph or table linking each selected structural setting and non-default modification to its training-only evidence and decision criterion. Separately state how numerical coefficients were estimated and interpret the important estimates; do not imply that fitted coefficients were manually chosen.
+- A compact training-only time-series/STL figure, or an equally clear model-specific extract of that evidence when the page limit requires prioritisation.
 - A compact actual-versus-forecast figure or a model-specific diagnostic figure.
-- A small table of the model's RMSE, MAE, MAPE, MASE, sMAPE, and Ljung-Box result.
+- A small table containing training, test, and test-minus-training values for the model's ME, MSE, RMSE, MAE, MPE, and MAPE, followed by the Ljung-Box result.
 - Interpretation of forecast pattern and intervals.
 - Brief comparison with the other group models without duplicating the full group discussion.
 - Summary of model strengths and weaknesses.
 - Model-specific limitations.
 - Evidence-based recommendation and possible improvement.
-- A short conclusion directly answering whether the assigned model is suitable.
+- A separate Conclusion section directly answering whether the assigned model is suitable and stating the final recommendations.
 
 #### References - excluded from the two-page content limit
 
@@ -499,17 +549,17 @@ Include:
 #### Methodology must include
 
 - Definition of `(p,d,q)(P,D,Q)[12]`.
-- Planned use of plots to assess trend and seasonality; report the observed patterns in Results.
+- Planned use of plots to assess trend and seasonality; report the observed patterns in Data Analysis.
 - Variance/transformation assessment procedure, without an estimated lambda or empirical outcome.
-- Stationarity-assessment procedure using plots and a suitable unit-root test; report the outcome in Results.
-- Procedure and criteria for choosing `d` and `D`; report the chosen values in Results.
-- Planned ACF/PACF assessment at ordinary and seasonal lags; report its interpretation in Results.
+- Stationarity-assessment procedure using plots and a suitable unit-root test; report the outcome in Data Analysis.
+- Procedure and criteria for choosing `d` and `D`; report the chosen values in Data Analysis.
+- Planned ACF/PACF assessment at ordinary and seasonal lags; report its interpretation in Data Analysis.
 - Manual candidate process or complete `auto.arima()` settings.
-- Candidate-order search, AICc criterion, and drift/mean rules; report the selected order, coefficients, standard errors, and AICc in Results.
+- Candidate-order search, AICc criterion, and drift/mean rules; report the selected order, coefficients, standard errors, and AICc in Data Analysis.
 - Planned residual ACF and Ljung-Box test with appropriate fitted degrees of freedom.
-- Prespecified loop-back rule if residual autocorrelation remains; report whether it was triggered in Results.
+- Prespecified loop-back rule if residual autocorrelation remains; report whether it was triggered in Data Analysis.
 
-#### Results and discussion must include
+#### Data Analysis must include
 
 - 60-month test forecast and accuracy metrics.
 - Forecast intervals and any physically implausible values.
@@ -523,15 +573,15 @@ Include:
 #### Methodology must include
 
 - Explanation of level, trend, and seasonal components.
-- Criteria for choosing additive versus multiplicative seasonality; report the choice and evidence in Results.
-- Criteria for including or damping a trend; report the fitted decision in Results.
-- Parameters to be estimated (alpha, beta if used, and gamma) and the initialization method; report fitted values in Results.
+- Criteria for choosing additive versus multiplicative seasonality; report the choice and evidence in Data Analysis.
+- Criteria for including or damping a trend; report the fitted decision in Data Analysis.
+- Parameters to be estimated (alpha, beta if used, and gamma) and the initialization method; report fitted values in Data Analysis.
 - Planned interpretation of small or large smoothing values after estimation.
 - Training-only optimization procedure.
-- Planned residual ACF and Ljung-Box procedure; report the result in Results.
-- Prespecified handling of any optimization or convergence warning; report encountered warnings in Results.
+- Planned residual ACF and Ljung-Box procedure; report the result in Data Analysis.
+- Prespecified handling of any optimization or convergence warning; report encountered warnings in Data Analysis.
 
-#### Results and discussion must include
+#### Data Analysis must include
 
 - 60-month test forecast and accuracy metrics.
 - Interpretation of how quickly level and seasonality adapt.
@@ -550,14 +600,14 @@ Important current-work correction:
 
 - Explanation of the ETS letters: error, trend, and seasonal components.
 - Automatic search space and selection criterion, normally AICc.
-- Candidate ETS structures and the selection rule; report the selected structure in Results only after the rerun.
-- Rules for considering absent, present, or damped trend; report the selected trend form in Results.
-- Parameters to be estimated (alpha, beta, gamma, and phi where applicable); report their fitted values in Results.
-- Criteria for transformation and additive-only restrictions; report any applied restriction in Results.
+- Candidate ETS structures and the selection rule; report the selected structure in Data Analysis only after the rerun.
+- Rules for considering absent, present, or damped trend; report the selected trend form in Data Analysis.
+- Parameters to be estimated (alpha, beta, gamma, and phi where applicable); report their fitted values in Data Analysis.
+- Criteria for transformation and additive-only restrictions; report any applied restriction in Data Analysis.
 - Explanation of how ETS differs from the classical Holt-Winters implementation.
-- Planned residual ACF and Ljung-Box procedure; report the result in Results.
+- Planned residual ACF and Ljung-Box procedure; report the result in Data Analysis.
 
-#### Results and discussion must include
+#### Data Analysis must include
 
 - 60-month test forecast and common accuracy metrics.
 - Interpretation of the selected error/trend/seasonal structure.
@@ -602,12 +652,12 @@ The report must include the model formula, adjusted $R^2$, training-period cross
 - Justification for retaining both `trend` and `season` in the specified regression formula.
 - Transformation assessment procedure, without an estimated lambda or empirical outcome.
 - Coefficient-estimation method and key assumptions.
-- Planned assessment of coefficient uncertainty without relying only on p-values; report estimates and uncertainty in Results.
-- Training-period rolling-origin validation procedure; report its results in Results.
-- Planned residual ACF and Ljung-Box test to assess remaining time dependence; report the outcome in Results.
-- Prespecified criterion for considering regression with ARIMA errors; report the resulting decision in Results.
+- Planned assessment of coefficient uncertainty without relying only on p-values; report estimates and uncertainty in Data Analysis.
+- Training-period rolling-origin validation procedure; report its results in Data Analysis.
+- Planned residual ACF and Ljung-Box test to assess remaining time dependence; report the outcome in Data Analysis.
+- Prespecified criterion for considering regression with ARIMA errors; report the resulting decision in Data Analysis.
 
-#### Results and discussion must include
+#### Data Analysis must include
 
 - 60-month test forecast and common accuracy metrics.
 - Interpretation of the retained trend coefficient and monthly seasonal effects.
@@ -635,6 +685,7 @@ The report must include the model formula, adjusted $R^2$, training-period cross
 
 Each member must produce:
 
+- Training-only time-series/STL identification evidence and a concise model-specific interpretation.
 - Final model specification and parameter table.
 - Model-specific residual plot and ACF.
 - Ljung-Box result.
@@ -773,21 +824,24 @@ The cover-page percentages must reflect actual work. Keep a short contribution l
 - [ ] Conclusion includes SDG implications, limitations, and evidence-based recommendations.
 - [ ] IEEE conference template is followed consistently.
 - [ ] IEEE citations and references are complete and accurate.
+- [ ] Every decimal value with absolute value less than one includes a leading zero, including coefficients, errors, p-values, and thresholds.
 - [ ] Cover page contains four names, IDs, signatures, and percentages totaling 100%.
 - [ ] Report does not exceed five pages.
 
 ### 11.2 Individual report checklist for each member
 
 - [ ] Assigned model is clearly identified.
+- [ ] Top-level sections appear in this exact order: Methodology, Data Analysis, Conclusion, References, Appendix.
 - [ ] Model specification, parameters, and implementation are technically correct.
 - [ ] Model selection is justified using the supplied workflow.
 - [ ] Training-only decisions are separated from test evaluation.
 - [ ] Residual ACF and Ljung-Box results are interpreted.
 - [ ] The white-noise loop is followed or remaining problems are disclosed.
 - [ ] Test results use the common 80:20 dates and metrics.
-- [ ] Results are critically interpreted, not merely displayed.
+- [ ] Data Analysis critically interprets the results rather than merely displaying them.
 - [ ] Conclusion includes summary, model-specific limitations, and recommendations.
 - [ ] APA writing, in-text citations, and references are consistent.
+- [ ] Every decimal value with absolute value less than one includes a leading zero, including coefficients, errors, p-values, and thresholds.
 - [ ] Main content is no more than two pages.
 - [ ] Cover page, references, and code appendix are present and separated.
 - [ ] Appendix contains only relevant and reproducible code.
@@ -797,7 +851,7 @@ The cover-page percentages must reflect actual work. Keep a short contribution l
 - [ ] Each member can explain the assigned model, parameters, diagnostics, and findings.
 - [ ] Each member understands the whole project and why the final model was selected.
 - [ ] Each member can explain why chronological splitting is required.
-- [ ] Each member can answer questions about RMSE, MAE, MAPE, MASE, sMAPE, AICc, and Ljung-Box testing.
+- [ ] Each member can answer questions about ME, MSE, RMSE, MAE, MPE, MAPE, AICc, and Ljung-Box testing.
 - [ ] Presentation transitions are rehearsed and coherent.
 - [ ] Work is completed on time and contribution evidence is retained.
 

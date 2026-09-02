@@ -24,6 +24,7 @@ The managed workspace grants read access to the repository's `.git` directory bu
 
 - Confirmed the working tree remained unstaged with `git status --short` after the failure.
 - The application files themselves remained writable; the restriction was isolated to Git metadata.
+- The blocker recurred when committing the completed report revision; `git diff --cached --check` and `git commit` could not proceed because staging never created the index lock.
 
 ## Workaround
 

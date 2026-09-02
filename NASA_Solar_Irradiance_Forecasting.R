@@ -117,18 +117,38 @@ fit_models <- function(y, h) {
   )
 }
 
-metric_row <- function(name, fc, actual, training) {
-  pred <- as.numeric(fc$mean)
+calculate_metrics <- function(pred, actual) {
+  pred <- as.numeric(pred)
   actual <- as.numeric(actual)
+  valid <- is.finite(actual) & is.finite(pred)
+  if (!any(valid)) stop("No finite actual/forecast pairs are available for metric calculation")
+  actual <- actual[valid]
+  pred <- pred[valid]
   errors <- actual - pred
-  scale_denom <- mean(abs(diff(as.numeric(training), lag = 12)), na.rm = TRUE)
+  percentage_valid <- actual != 0
+  if (!any(percentage_valid)) {
+    mpe <- NA_real_
+    mape <- NA_real_
+  } else {
+    percentage_errors <- errors[percentage_valid] / actual[percentage_valid]
+    mpe <- mean(percentage_errors) * 100
+    mape <- mean(abs(percentage_errors)) * 100
+  }
+  data.frame(
+    ME = mean(errors),
+    MSE = mean(errors^2),
+    RMSE = sqrt(mean(errors^2)),
+    MAE = mean(abs(errors)),
+    MPE = mpe,
+    MAPE = mape,
+    stringsAsFactors = FALSE
+  )
+}
+
+metric_row <- function(name, fc, actual, training = NULL) {
   data.frame(
     Model = name,
-    MAE = mean(abs(errors)),
-    RMSE = sqrt(mean(errors^2)),
-    MAPE = mean(abs(errors / actual)) * 100,
-    MASE = if (is.finite(scale_denom) && scale_denom > 0) mean(abs(errors)) / scale_denom else NA_real_,
-    sMAPE = mean(200 * abs(errors) / pmax(abs(actual) + abs(pred), .Machine$double.eps)),
+    calculate_metrics(fc$mean, actual),
     stringsAsFactors = FALSE
   )
 }
@@ -139,15 +159,24 @@ accuracy_table <- do.call(rbind, lapply(names(models), function(nm) {
   train_residuals <- as.numeric(models[[nm]]$residuals)
   train_actual <- tail(as.numeric(train), length(train_residuals))
   valid <- is.finite(train_residuals) & is.finite(train_actual)
+  train_metrics <- calculate_metrics(
+    train_actual[valid] - train_residuals[valid],
+    train_actual[valid]
+  )
   data.frame(
     Model = nm,
-    Training_MAE = mean(abs(train_residuals[valid])),
-    Training_RMSE = sqrt(mean(train_residuals[valid]^2)),
-    MAE = test_metrics$MAE,
+    Training_ME = train_metrics$ME,
+    Training_MSE = train_metrics$MSE,
+    Training_RMSE = train_metrics$RMSE,
+    Training_MAE = train_metrics$MAE,
+    Training_MPE = train_metrics$MPE,
+    Training_MAPE = train_metrics$MAPE,
+    ME = test_metrics$ME,
+    MSE = test_metrics$MSE,
     RMSE = test_metrics$RMSE,
+    MAE = test_metrics$MAE,
+    MPE = test_metrics$MPE,
     MAPE = test_metrics$MAPE,
-    MASE = test_metrics$MASE,
-    sMAPE = test_metrics$sMAPE,
     stringsAsFactors = FALSE
   )
 }))
@@ -157,12 +186,24 @@ write.csv(accuracy_table, file.path(output_dir, "nasa_model_accuracy.csv"), row.
 
 train_test_comparison <- data.frame(
   Model = accuracy_table$Model,
-  Training_MAE = accuracy_table$Training_MAE,
-  Test_MAE = accuracy_table$MAE,
-  Test_MAE_x_Training = accuracy_table$MAE / accuracy_table$Training_MAE,
+  Training_ME = accuracy_table$Training_ME,
+  Test_ME = accuracy_table$ME,
+  Test_minus_Training_ME = accuracy_table$ME - accuracy_table$Training_ME,
+  Training_MSE = accuracy_table$Training_MSE,
+  Test_MSE = accuracy_table$MSE,
+  Test_minus_Training_MSE = accuracy_table$MSE - accuracy_table$Training_MSE,
   Training_RMSE = accuracy_table$Training_RMSE,
   Test_RMSE = accuracy_table$RMSE,
-  Test_RMSE_x_Training = accuracy_table$RMSE / accuracy_table$Training_RMSE,
+  Test_minus_Training_RMSE = accuracy_table$RMSE - accuracy_table$Training_RMSE,
+  Training_MAE = accuracy_table$Training_MAE,
+  Test_MAE = accuracy_table$MAE,
+  Test_minus_Training_MAE = accuracy_table$MAE - accuracy_table$Training_MAE,
+  Training_MPE = accuracy_table$Training_MPE,
+  Test_MPE = accuracy_table$MPE,
+  Test_minus_Training_MPE = accuracy_table$MPE - accuracy_table$Training_MPE,
+  Training_MAPE = accuracy_table$Training_MAPE,
+  Test_MAPE = accuracy_table$MAPE,
+  Test_minus_Training_MAPE = accuracy_table$MAPE - accuracy_table$Training_MAPE,
   stringsAsFactors = FALSE
 )
 write.csv(
@@ -177,7 +218,7 @@ split_test_months <- c(12L, 24L, 36L, 48L, 60L, 90L)
 split_cache_path <- Sys.getenv("NASA_SPLIT_SENSITIVITY_CACHE", unset = "")
 required_split_columns <- c(
   "Model", "Ratio", "Train_months", "Test_months", "Test_start", "Test_end",
-  "MAE", "RMSE", "MAPE", "MASE", "sMAPE"
+  "ME", "MSE", "RMSE", "MAE", "MPE", "MAPE"
 )
 if (nzchar(split_cache_path)) {
   if (!file.exists(split_cache_path)) stop("Split-sensitivity cache does not exist: ", split_cache_path)
@@ -204,11 +245,12 @@ if (nzchar(split_cache_path)) {
         Test_months = split_h,
         Test_start = format(monthly$date[train_n + 1L], "%Y-%m"),
         Test_end = format(tail(monthly$date, 1L), "%Y-%m"),
-        MAE = split_metrics$MAE,
+        ME = split_metrics$ME,
+        MSE = split_metrics$MSE,
         RMSE = split_metrics$RMSE,
+        MAE = split_metrics$MAE,
+        MPE = split_metrics$MPE,
         MAPE = split_metrics$MAPE,
-        MASE = split_metrics$MASE,
-        sMAPE = split_metrics$sMAPE,
         stringsAsFactors = FALSE
       )
     }))
@@ -547,6 +589,23 @@ Acf(decomposition$time.series[, "remainder"], lag.max = 48,
     main = "ACF of STL remainder")
 dev.off()
 
+# Model-identification evidence must use the training period only.  This
+# compact figure is repeated in the standalone individual reports so that the
+# evidence supporting each locked specification appears before its results.
+png(file.path(figure_dir, "nasa_training_identification.png"), width = 1600, height = 1400, res = 180)
+training_decomposition <- stl(train, s.window = "periodic", robust = TRUE)
+par(mfrow = c(2, 2), mar = c(4, 4, 3.5, 1), mgp = c(2.4, 0.7, 0))
+plot(train, type = "l", col = "#A65300", lwd = 1.5,
+     xlab = "Year", ylab = "kWh/m2/day", main = "Training series (2001-2020)")
+grid(col = "grey88")
+plot(training_decomposition$time.series[, "trend"], type = "l", col = "#A65300", lwd = 2,
+     xlab = "", ylab = "Trend", main = "Training STL trend")
+plot(training_decomposition$time.series[, "seasonal"], type = "l", col = "#D97706", lwd = 2,
+     xlab = "", ylab = "Seasonal", main = "Training STL seasonal")
+plot(training_decomposition$time.series[, "remainder"], type = "h", col = "grey35",
+     xlab = "Year", ylab = "Remainder", main = "Training STL remainder")
+dev.off()
+
 model_colors <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7")
 png(file.path(figure_dir, "nasa_test_forecasts.png"), width = 1800, height = 1000, res = 180)
 plot(monthly$date, monthly$solar_irradiance, type = "l", lwd = 1.5, col = "black",
@@ -563,6 +622,39 @@ for (i in seq_along(models)) {
   nm <- names(models)[i]
   slug <- safe_slug(nm)
   res <- as.numeric(na.omit(models[[nm]]$residuals))
+
+  metric_row_data <- accuracy_table[accuracy_table$Model == nm, ]
+  diagnostic_row_data <- diagnostics[diagnostics$Model == nm, ]
+  metric_labels <- c(
+    "Test metric", "ME (kWh/m2/day)", "MSE ((kWh/m2/day)^2)",
+    "RMSE (kWh/m2/day)", "MAE (kWh/m2/day)", "MPE", "MAPE",
+    "Ljung-Box p-value"
+  )
+  metric_values <- c(
+    "Value", sprintf("%.4f", metric_row_data$ME),
+    sprintf("%.4f", metric_row_data$MSE), sprintf("%.4f", metric_row_data$RMSE),
+    sprintf("%.4f", metric_row_data$MAE), sprintf("%.4f%%", metric_row_data$MPE),
+    sprintf("%.4f%%", metric_row_data$MAPE),
+    sprintf("%.4f", diagnostic_row_data$Ljung_Box_p_value)
+  )
+  png(
+    file.path(figure_dir, paste0("nasa_", slug, "_metric_table.png")),
+    width = 1200, height = 700, res = 180
+  )
+  par(mar = c(0, 0, 0, 0))
+  plot.new()
+  plot.window(xlim = c(0, 1), ylim = c(0, length(metric_labels)))
+  row_y <- rev(seq_along(metric_labels)) - 0.5
+  for (row_index in seq_along(metric_labels)) {
+    fill <- if (row_index == 1) "#E7E6E6" else if (row_index %% 2 == 0) "#FAFAFA" else "white"
+    rect(0.02, row_y[row_index] - 0.46, 0.98, row_y[row_index] + 0.46,
+         col = fill, border = "#808080", lwd = 1)
+  }
+  text(0.05, row_y, metric_labels, adj = c(0, 0.5), cex = 0.88,
+       font = c(2, rep(1, length(metric_labels) - 1)))
+  text(0.95, row_y, metric_values, adj = c(1, 0.5), cex = 0.88,
+       font = c(2, rep(1, length(metric_values) - 1)))
+  dev.off()
 
   png(
     file.path(figure_dir, paste0("nasa_", slug, "_diagnostics.png")),
@@ -651,12 +743,13 @@ print(audit, row.names = FALSE)
 cat("\nDescriptive statistics\n"); print(descriptive, row.names = FALSE)
 cat("\nAverage solar irradiance by month\n"); print(month_summary, row.names = FALSE)
 cat("\nHoldout accuracy (ranked by RMSE)\n"); print(accuracy_table, row.names = FALSE)
-cat("\nTraining versus test error multipliers (locked 80:20 split)\n")
+cat("\nTraining versus test metrics and test-minus-training differences (locked 80:20 split)\n")
 print(train_test_comparison, row.names = FALSE)
 cat(paste0(
-  "Interpretation: a Test_RMSE_x_Training value of 1.50 means that the test ",
-  "RMSE is 1.50 times the training RMSE. Values above 1 indicate higher error ",
-  "on unseen test observations; values below 1 indicate lower test-period error. ",
+  "Interpretation: each Test_minus_Training value is the test metric minus the ",
+  "corresponding training metric. Positive differences in MSE, RMSE, MAE and MAPE ",
+  "indicate higher test-period error. For signed ME and MPE, compare absolute values ",
+  "with zero and retain the sign to distinguish underforecasting from overforecasting. ",
   "Treat this as descriptive because in-sample residual errors and multi-step ",
   "holdout errors are not identical evaluation designs.\n"
 ))

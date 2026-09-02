@@ -10,6 +10,6 @@ resource-path:
   - .
   - ..
 metadata:
-  link-citations: true
+  link-citations: false
   table-caption-position: above
   number-sections: false
