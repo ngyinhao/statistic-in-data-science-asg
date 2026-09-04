@@ -1,11 +1,9 @@
 from: markdown+raw_attribute
 standalone: true
 citeproc: true
-filters:
-  - ieee-tables.lua
 reference-doc: IEEE-conference-reference.docx
 bibliography: references.bib
-csl: ieee.csl
+csl: apa.csl
 resource-path:
   - .
   - ..

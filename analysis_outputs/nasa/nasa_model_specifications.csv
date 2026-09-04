@@ -1,5 +1,5 @@
-"Model","Specification","AIC","AICc","BIC","Converged"
-"Trend + season","tslm(formula = y ~ trend + season)",87.6299514880352,NA,136.358896414823,TRUE
-"Holt-Winters","Additive Holt-Winters without trend; alpha=0.0273, gamma=0.1366",NA,NA,NA,TRUE
-"ETS","ETS(A,N,A)   Call: ets(y = y)    Smoothing parameters:     alpha = 0.0204      gamma = 1e-04     Initial states:     l = 4.8121      s = -0.58 -0.4088 -0.23 -0.1098 0.0342 -0.0082            0.0674 0.1867 0.3612 0.4827 0.3898 -0.1852    sigma:  0.2842       AIC     AICc      BIC  727.0129 729.1557 779.2225 ",727.01288763104,729.155744773897,779.22247148117,TRUE
-"SARIMA","Series: y  ARIMA(0,0,2)(2,1,1)[12]   Coefficients:          ma1     ma2     sar1     sar2     sma1       0.2248  0.0903  -0.0086  -0.1301  -0.8869 s.e.  0.0678  0.0696   0.0870   0.0824   0.0959  sigma^2 = 0.08196:  log likelihood = -46.51 AIC=105.02   AICc=105.4   BIC=125.59",105.01697920482,105.397069702557,125.593052978546,TRUE
+Model,Specification,AIC,AICc,BIC,Converged
+SARIMA,"Series: y  ARIMA(1,0,0)(0,1,1)[12]   Coefficients:          ar1     sma1       0.2087  -0.9554 s.e.  0.0653   0.1190  sigma^2 = 0.07993:  log likelihood = -48.08 AIC=102.16   AICc=102.27   BIC=112.45",102.162575593834,102.269718450977,112.450612480697,True
+ETS,"ETS(A,N,A)   Call: ets(y = y)    Smoothing parameters:     alpha = 0.0204      gamma = 1e-04     Initial states:     l = 4.8121      s = -0.58 -0.4088 -0.23 -0.1098 0.0342 -0.0082            0.0674 0.1867 0.3612 0.4827 0.3898 -0.1852    sigma:  0.2842       AIC     AICc      BIC  727.0129 729.1557 779.2225 ",727.01288763104,729.155744773897,779.22247148117,True
+Basic structural model,"Basic structural model: stochastic local level, stochastic seasonal component (period 12), and irregular error; no slope component; exact diffuse initialisation; statsmodels maximum likelihood; 12 initial months excluded from in-sample residual diagnostics",161.86993438895834,,214.0795182390882,True
+Holt-Winters,"Additive Holt-Winters without trend; alpha=0.0273, gamma=0.1366",,,,True

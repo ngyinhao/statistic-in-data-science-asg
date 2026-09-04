@@ -17,33 +17,19 @@ Assigned model: Additive Holt–Winters · Submission date: [DD Month YYYY]
 <w:p><w:pPr><w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="893" w:bottom="1440" w:left="893" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:num="1" w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:pPr></w:p>
 ```
 
-::: {custom-style="Abstract"}
-**Abstract—**This report evaluates additive Holt–Winters forecasting without a trend for monthly NASA POWER surface solar irradiance in Kuala Lumpur. The model preserved the annual cycle, passed residual diagnostics, and achieved test RMSE 0.3101.
-:::
-
-::: {custom-style="Keywords"}
-**Keywords—**additive seasonality, exponential smoothing, forecasting, Holt–Winters, solar irradiance.
-:::
-
 # Methodology
 
 This report proposes evaluating Holt–Winters exponential smoothing for monthly NASA POWER solar irradiance in Kuala Lumpur [@nasa-power-monthly]. The method recursively updates level and month-specific seasonal states; a trend state is optional. Additive and multiplicative seasonality would be considered according to whether seasonal amplitude was stable in absolute units or proportional to the series level [@hyndman-athanasopoulos-2021].
 
-The chronological design would use January 2001–December 2020 for training and January 2021–December 2025 for testing. Both partitions contain complete annual cycles, whereas random splitting would leak future data and exact 70:30 would break seasonal boundaries. The need for transformation would be assessed from training diagnostics only, with response-scale modelling preferred for interpretability and direct reporting of errors when transformation was unnecessary.
+An 80:20 chronological split would use January 2001–December 2020 for training and January 2021–December 2025 for testing; chronological order would prevent future leakage. The need for transformation would be assessed from training diagnostics only, with response-scale modelling preferred for interpretability and direct reporting of errors when transformation was unnecessary.
 
-Training plots and STL decomposition would inform the seasonal form and whether a trend component was warranted. Additive and multiplicative seasonality, and models with or without trend smoothing, were the structural alternatives. Additive seasonality would be retained only when seasonal amplitude was approximately constant in response units; multiplicative seasonality would require amplitude proportional to level. Setting `beta=FALSE` is a deliberate modification, not a neutral default, and would be used only when training evidence did not support persistent trend extrapolation. Because STL is descriptive and additive in form, these decisions would also use the original training plot, variance evidence, coefficient uncertainty, and candidate behaviour. R would optimise the applicable smoothing coefficients by minimising one-step squared errors; α and γ would therefore be fitted rather than manually selected.
+Training plots and training-only decomposition would inform the seasonal form and whether a trend component was warranted. Additive and multiplicative seasonality, and models with or without trend smoothing, would be the structural alternatives. Additive seasonality would be retained only when seasonal amplitude was approximately constant in response units; multiplicative seasonality would require amplitude proportional to level. Setting `beta=FALSE` would be treated as a deliberate modification and used only when training evidence did not support persistent trend extrapolation. Because decomposition would be descriptive and additive in form, these decisions would also use the original training plot, variance evidence, coefficient uncertainty, and candidate behaviour. R would optimise the applicable smoothing coefficients by minimising one-step squared errors; α and γ would therefore be fitted rather than manually selected.
 
-Response residuals would be inspected over time and by ACF, followed by a lag-24 Ljung–Box test with the appropriate fitted degrees of freedom [@forecast-checkresiduals]. Material remaining autocorrelation would trigger reconsideration of the specification. After the model was locked, training and test performance would be reported consistently using ME, MSE, RMSE, MAE, MPE, and MAPE, together with each test-minus-training difference. ME and MPE would be judged by closeness to zero and sign; the remaining error measures would be minimised.
+Response residuals would be inspected over time and by ACF, followed by a lag-24 Ljung–Box test with the appropriate fitted degrees of freedom [@forecast-checkresiduals]. Material remaining autocorrelation would trigger reconsideration of the specification. After the model had been locked, training and test performance would be reported consistently using ME, MSE, RMSE, MAE, MPE, and MAPE, together with each test-minus-training difference. ME and MPE would be judged by closeness to zero and sign; the remaining error measures would be minimised.
 
-# Data Analysis
+# Data Analysis (Results and Discussion)
 
-**Training evidence and model identification—**The 2001–2020 time plot showed seasonal fluctuations of broadly stable absolute size, while the STL decomposition showed a strong annual component but only modest long-term movement. The training regression trend was also small and uncertain (+0.000381 per month, $p=0.148$). Stable absolute amplitude supported additive rather than multiplicative seasonality and retention of the response scale. Modest and uncertain movement supported the deliberate `beta=FALSE` restriction because omitting trend smoothing avoids an unsupported five-year trend extrapolation. These training-only reasons, rather than defaults, established `HoltWinters(train, beta=FALSE, seasonal="additive")`; a trend-enabled candidate remains an appropriate sensitivity check.
-
-![Training-only time series and STL components used for model identification.](../analysis_outputs/nasa/figures/nasa_training_identification.png){width=3.20in}
-
-```{=openxml}
-<w:p><w:r><w:br w:type="column"/></w:r></w:p>
-```
+**Training evidence and model identification—**Training-only decomposition indicated a strong annual component with broadly stable absolute amplitude and only modest long-term movement. The training regression trend was also small and uncertain (+0.000381 per month, $p=0.148$). Stable absolute amplitude supported additive rather than multiplicative seasonality and retention of the response scale. Modest and uncertain movement supported the deliberate `beta=FALSE` restriction because omitting trend smoothing avoids an unsupported five-year trend extrapolation. These training-only reasons, rather than defaults, established `HoltWinters(train, beta=FALSE, seasonal="additive")`; a trend-enabled candidate remains an appropriate sensitivity check.
 
 Given the locked structure, R minimised one-step squared errors and jointly fitted α=0.0273 and γ=0.1366; these values were optimised rather than manually chosen. The small α gives limited weight to the newest level error, producing a stable but slowly adapting level. The larger γ allows the monthly seasonal states to update more readily. β was not estimated because trend smoothing was deliberately disabled on the evidence above. Lag 24 checks two annual cycles, and the two fitted smoothing coefficients were deducted for the Ljung–Box test. The result was $Q=28.852$, $p=0.149$, so no diagnostic loop-back was required.
 

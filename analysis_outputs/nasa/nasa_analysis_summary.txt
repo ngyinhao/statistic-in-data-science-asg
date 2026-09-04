@@ -1,5 +1,5 @@
 NASA POWER Kuala Lumpur solar irradiance forecasting
-Generated: 2026-09-02 11:15:30 +08
+Generated: 2026-09-04 16:19:10 +08
 
                   Item
             Source URL
@@ -62,44 +62,44 @@ Average solar irradiance by month
 
 Holdout accuracy (ranked by RMSE)
           Model   Training_ME Training_MSE Training_RMSE Training_MAE
-         SARIMA  9.047961e-03   0.07615252     0.2759575    0.2047985
+         SARIMA  8.312258e-03   0.07526620     0.2743469    0.2045986
             ETS  6.534079e-03   0.07604587     0.2757642    0.2140900
  Trend + season  4.809127e-17   0.07506364     0.2739775    0.2115556
    Holt-Winters -6.639386e-03   0.09072041     0.3011983    0.2328249
  Training_MPE Training_MAPE          ME        MSE      RMSE       MAE
-   -0.1288614      4.344101 -0.05661046 0.08574022 0.2928143 0.2245283
+   -0.1482989      4.337671 -0.04510474 0.08122671 0.2850030 0.2197633
    -0.2057518      4.539225 -0.08465854 0.08686540 0.2947294 0.2351015
    -0.3457165      4.495229 -0.09886510 0.08926057 0.2987651 0.2413566
    -0.4489894      4.954432 -0.10368877 0.09618628 0.3101391 0.2463986
        MPE     MAPE
- -1.464336 4.734634
+ -1.219132 4.622372
  -2.054566 4.967334
  -2.358402 5.109288
  -2.455342 5.221263
 
 Training versus test metrics and test-minus-training differences (locked 80:20 split)
           Model   Training_ME     Test_ME Test_minus_Training_ME Training_MSE
-         SARIMA  9.047961e-03 -0.05661046            -0.06565842   0.07615252
+         SARIMA  8.312258e-03 -0.04510474            -0.05341700   0.07526620
             ETS  6.534079e-03 -0.08465854            -0.09119262   0.07604587
  Trend + season  4.809127e-17 -0.09886510            -0.09886510   0.07506364
    Holt-Winters -6.639386e-03 -0.10368877            -0.09704938   0.09072041
    Test_MSE Test_minus_Training_MSE Training_RMSE Test_RMSE
- 0.08574022             0.009587697     0.2759575 0.2928143
+ 0.08122671             0.005960510     0.2743469 0.2850030
  0.08686540             0.010819527     0.2757642 0.2947294
  0.08926057             0.014196928     0.2739775 0.2987651
  0.09618628             0.005465869     0.3011983 0.3101391
  Test_minus_Training_RMSE Training_MAE  Test_MAE Test_minus_Training_MAE
-              0.016856844    0.2047985 0.2245283              0.01972983
+              0.010656139    0.2045986 0.2197633              0.01516472
               0.018965206    0.2140900 0.2351015              0.02101155
               0.024787627    0.2115556 0.2413566              0.02980103
               0.008940838    0.2328249 0.2463986              0.01357362
  Training_MPE  Test_MPE Test_minus_Training_MPE Training_MAPE Test_MAPE
-   -0.1288614 -1.464336               -1.335474      4.344101  4.734634
+   -0.1482989 -1.219132               -1.070833      4.337671  4.622372
    -0.2057518 -2.054566               -1.848815      4.539225  4.967334
    -0.3457165 -2.358402               -2.012686      4.495229  5.109288
    -0.4489894 -2.455342               -2.006353      4.954432  5.221263
  Test_minus_Training_MAPE
-                0.3905326
+                0.2847005
                 0.4281084
                 0.6140586
                 0.2668311
@@ -259,12 +259,12 @@ Residual diagnostics
  Trend + season        240            24     13            32.62244
    Holt-Winters        228            24      2            28.85239
             ETS        240            24      2            32.32606
-         SARIMA        240            24      5            23.57723
+         SARIMA        240            24      2            30.60087
  Ljung_Box_p_value Residual_mean Residual_sd White_noise_at_5pct
       0.0006056001  4.809127e-17   0.2745500               FALSE
       0.1491235571 -6.639386e-03   0.3017877                TRUE
       0.0720044785  6.534079e-03   0.2762629                TRUE
-      0.2128721251  9.047961e-03   0.2763855                TRUE
+      0.1045765308  8.312258e-03   0.2747940                TRUE
 
 Model specifications
           Model
@@ -276,12 +276,12 @@ Model specifications
                                                                                                                                                                                                                                                                                    tslm(formula = y ~ trend + season)
                                                                                                                                                                                                                                                       Additive Holt-Winters without trend; alpha=0.0273, gamma=0.1366
  ETS(A,N,A)   Call: ets(y = y)    Smoothing parameters:     alpha = 0.0204      gamma = 1e-04     Initial states:     l = 4.8121      s = -0.58 -0.4088 -0.23 -0.1098 0.0342 -0.0082            0.0674 0.1867 0.3612 0.4827 0.3898 -0.1852    sigma:  0.2842       AIC     AICc      BIC  727.0129 729.1557 779.2225 
-                                 Series: y  ARIMA(0,0,2)(2,1,1)[12]   Coefficients:          ma1     ma2     sar1     sar2     sma1       0.2248  0.0903  -0.0086  -0.1301  -0.8869 s.e.  0.0678  0.0696   0.0870   0.0824   0.0959  sigma^2 = 0.08196:  log likelihood = -46.51 AIC=105.02   AICc=105.4   BIC=125.59
+                                                                                                              Series: y  ARIMA(1,0,0)(0,1,1)[12]   Coefficients:          ar1     sma1       0.2087  -0.9554 s.e.  0.0653   0.1190  sigma^2 = 0.07993:  log likelihood = -48.08 AIC=102.16   AICc=102.27   BIC=112.45
        AIC     AICc      BIC Converged
   87.62995       NA 136.3589      TRUE
         NA       NA       NA      TRUE
  727.01289 729.1557 779.2225      TRUE
- 105.01698 105.3971 125.5931      TRUE
+ 102.16258 102.2697 112.4506      TRUE
 
 Model parameters
           Model   Parameter      Estimate Standard_error       P_value
@@ -314,11 +314,8 @@ Model parameters
             ETS          s8  0.3611966200             NA            NA
             ETS          s9  0.4827143282             NA            NA
             ETS         s10  0.3897956137             NA            NA
-         SARIMA         ma1  0.2248278207   0.0678475643  9.206370e-04
-         SARIMA         ma2  0.0902623797   0.0695813214  1.945550e-01
-         SARIMA        sar1 -0.0086465703   0.0870393119  9.208675e-01
-         SARIMA        sar2 -0.1300612689   0.0824326660  1.146143e-01
-         SARIMA        sma1 -0.8868601197   0.0959015310  2.295646e-20
+         SARIMA         ar1  0.2087321885   0.0653370494  1.399769e-03
+         SARIMA        sma1 -0.9554024750   0.1189779635  9.740973e-16
 
 Regression summary
                     Item     Value
@@ -331,11 +328,223 @@ Regression rolling-origin cross-validation (h = 12)
       12              217 0.2680988 0.3545156
 
 Transformation and stationarity evidence
-                                Item                          Value
-             Guerrero_Box_Cox_lambda             -0.621780655685462
-             Selected_transformation None (response scale retained)
- Recommended_nonseasonal_differences                              0
-    Recommended_seasonal_differences                              1
+                                       Item
+                    Guerrero_Box_Cox_lambda
+                 Annual_mean_SD_correlation
+                    Selected_transformation
+              Transformation_decision_basis
+               KPSS_ndiffs_supporting_check
+ Seasonal_strength_nsdiffs_supporting_check
+                        Manually_selected_d
+                           d_decision_basis
+                        Manually_selected_D
+                           D_decision_basis
+                            Seasonal_period
+                                                                                                                                        Value
+                                                                                                                           -0.621780655685462
+                                                                                                                             0.26132159746827
+                                                                                                               None (response scale retained)
+ Training plot and year-level mean-versus-SD check did not show a clear increase in seasonal amplitude with level; retain interpretable units
+                                                                                                                                            0
+                                                                                                                                            1
+                                                                                                                                            0
+                                                    No sustained ordinary trend remained after seasonal differencing; avoid over-differencing
+                                                                                                                                            1
+                                                              Strong annual pattern and seasonal-strength check support one lag-12 difference
+                                                                                                                                           12
+
+Manual SARIMA ACF/PACF evidence
+ Lag           ACF         PACF Approximate_95pct_bound
+   1  0.2106625246  0.210662525               0.1298042
+   2  0.0473988114  0.003160365               0.1298042
+   3 -0.0079829778 -0.019466425               0.1298042
+   4  0.0074899516  0.013529584               0.1298042
+   5  0.0381956590  0.036525576               0.1298042
+   6  0.0041916193 -0.012617357               0.1298042
+   7 -0.1214597092 -0.127539931               0.1298042
+   8  0.0275574029  0.085473406               0.1298042
+   9  0.0920394567  0.081714316               0.1298042
+  10 -0.0820321584 -0.139208158               0.1298042
+  11 -0.0701914096 -0.031342132               0.1298042
+  12 -0.4453154702 -0.439103117               0.1298042
+  13 -0.2031393196 -0.035514980               0.1298042
+  14  0.0340539124  0.106091490               0.1298042
+  15 -0.0613416619 -0.102359456               0.1298042
+  16 -0.0807486640 -0.030109152               0.1298042
+  17  0.1125022953  0.171500189               0.1298042
+  18 -0.0258484677 -0.103418107               0.1298042
+  19 -0.0612911595 -0.192257585               0.1298042
+  20 -0.0581456125  0.009683328               0.1298042
+  21 -0.0978560448  0.041927822               0.1298042
+  22  0.0406276231 -0.059452739               0.1298042
+  23  0.0291582275 -0.028208857               0.1298042
+  24 -0.1164405303 -0.339899344               0.1298042
+  25  0.0931657435  0.064948772               0.1298042
+  26 -0.0007641978  0.002422141               0.1298042
+  27 -0.0001703917 -0.081273702               0.1298042
+  28  0.0303024142 -0.052742435               0.1298042
+  29 -0.0706699059  0.096475986               0.1298042
+  30  0.0186064402  0.011935627               0.1298042
+  31  0.1969139329 -0.034659477               0.1298042
+  32  0.1492990177  0.146277519               0.1298042
+  33  0.0525441594  0.025582567               0.1298042
+  34  0.0402392014 -0.077070698               0.1298042
+  35 -0.1190975836 -0.170558992               0.1298042
+  36  0.0470726540 -0.184224642               0.1298042
+  37  0.0088223028  0.096264871               0.1298042
+  38 -0.0598271500 -0.007885157               0.1298042
+  39  0.0613962711 -0.005257125               0.1298042
+  40  0.0508739415 -0.026642542               0.1298042
+  41 -0.0600013499 -0.030580537               0.1298042
+  42 -0.0331273940 -0.086058535               0.1298042
+  43 -0.0937310603 -0.015126467               0.1298042
+  44 -0.1387740729  0.075213955               0.1298042
+  45 -0.0294628720 -0.001475080               0.1298042
+  46 -0.0494671791 -0.021917852               0.1298042
+  47  0.1001925140 -0.018274780               0.1298042
+  48  0.1707889447  0.004151608               0.1298042
+
+Manual SARIMA candidate comparison (AICc plus residual gate)
+ Candidate p d q P D Q
+       M02 1 0 0 0 1 1
+       M04 0 0 1 0 1 1
+       M20 1 0 0 2 1 1
+       M07 0 0 2 0 1 1
+       M11 1 0 0 1 1 1
+       M03 2 0 0 0 1 1
+       M05 1 0 1 0 1 1
+       M22 0 0 1 2 1 1
+       M13 0 0 1 1 1 1
+       M25 0 0 2 2 1 1
+       M16 0 0 2 1 1 1
+       M21 2 0 0 2 1 1
+       M23 1 0 1 2 1 1
+       M06 2 0 1 0 1 1
+       M08 1 0 2 0 1 1
+       M12 2 0 0 1 1 1
+       M14 1 0 1 1 1 1
+       M24 2 0 1 2 1 1
+       M17 1 0 2 1 1 1
+       M09 2 0 2 0 1 1
+       M18 2 0 2 1 1 1
+       M15 2 0 1 1 1 1
+       M27 2 0 2 2 1 1
+       M01 0 0 0 0 1 1
+       M10 0 0 0 1 1 1
+       M19 0 0 0 2 1 1
+       M26 1 0 2 2 1 1
+                                                                                                                                                                                                                                                                          Rationale
+ Restricted diagnostic-guided search: p=1 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=1 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=2 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=0 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=1 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=0 and q=0 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+ Restricted diagnostic-guided search: p=1 and q=2 test low ordinary orders because lag-1 ACF/PACF were both significant but ambiguous; P=2 tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12 are fixed from training-only stationarity, seasonal-strength, and ACF evidence
+           Specification      AIC     AICc      BIC Ljung_Box_lag Fit_df
+ ARIMA(1,0,0)(0,1,1)[12] 102.1626 102.2697 112.4506            24      2
+ ARIMA(0,0,1)(0,1,1)[12] 103.0848 103.1919 113.3728            24      2
+ ARIMA(1,0,0)(2,1,1)[12] 103.5690 103.8393 120.7157            24      4
+ ARIMA(0,0,2)(0,1,1)[12] 103.7422 103.9215 117.4596            24      3
+ ARIMA(1,0,0)(1,1,1)[12] 103.8946 104.0740 117.6120            24      3
+ ARIMA(2,0,0)(0,1,1)[12] 104.0323 104.2117 117.7497            24      3
+ ARIMA(1,0,1)(0,1,1)[12] 104.0673 104.2467 117.7847            24      3
+ ARIMA(0,0,1)(2,1,1)[12] 104.7081 104.9784 121.8548            24      4
+ ARIMA(0,0,1)(1,1,1)[12] 104.8273 105.0067 118.5447            24      3
+ ARIMA(0,0,2)(2,1,1)[12] 105.0170 105.3971 125.5931            24      5
+ ARIMA(0,0,2)(1,1,1)[12] 105.4936 105.7639 122.6403            24      4
+ ARIMA(2,0,0)(2,1,1)[12] 105.4652 105.8453 126.0413            24      5
+ ARIMA(1,0,1)(2,1,1)[12] 105.4969 105.8770 126.0729            24      5
+ ARIMA(2,0,1)(0,1,1)[12] 105.6897 105.9599 122.8364            24      4
+ ARIMA(1,0,2)(0,1,1)[12] 105.7167 105.9870 122.8635            24      4
+ ARIMA(2,0,0)(1,1,1)[12] 105.7780 106.0483 122.9247            24      4
+ ARIMA(1,0,1)(1,1,1)[12] 105.8088 106.0790 122.9555            24      4
+ ARIMA(2,0,1)(2,1,1)[12] 106.9247 107.4338 130.9301            24      6
+ ARIMA(1,0,2)(1,1,1)[12] 107.4689 107.8490 128.0450            24      5
+ ARIMA(2,0,2)(0,1,1)[12] 107.6894 108.0695 128.2654            24      5
+ ARIMA(2,0,2)(1,1,1)[12] 107.7320 108.2411 131.7374            24      6
+ ARIMA(2,0,1)(1,1,1)[12] 107.8939 108.2740 128.4700            24      5
+ ARIMA(2,0,2)(2,1,1)[12] 108.9100 109.5675 136.3448            24      7
+ ARIMA(0,0,0)(0,1,1)[12] 110.1373 110.1906 116.9960            24      1
+ ARIMA(0,0,0)(1,1,1)[12] 112.0844 112.1915 122.3724            24      2
+ ARIMA(0,0,0)(2,1,1)[12] 112.8877 113.0671 126.6051            24      3
+ ARIMA(1,0,2)(2,1,1)[12]       NA       NA       NA            NA     NA
+ Ljung_Box_p_value White_noise_at_5pct Nonnegative_candidate_forecast
+        0.10457653                TRUE                           TRUE
+        0.15270160                TRUE                           TRUE
+        0.34615513                TRUE                           TRUE
+        0.04591167               FALSE                           TRUE
+        0.08432378                TRUE                           TRUE
+        0.07403191                TRUE                           TRUE
+        0.07731093                TRUE                           TRUE
+        0.40046348                TRUE                           TRUE
+        0.12899487                TRUE                           TRUE
+        0.21287213                TRUE                           TRUE
+        0.03513433               FALSE                           TRUE
+        0.27627799                TRUE                           TRUE
+        0.28256119                TRUE                           TRUE
+        0.03623942               FALSE                           TRUE
+        0.02880590               FALSE                           TRUE
+        0.05872701                TRUE                           TRUE
+        0.06119870                TRUE                           TRUE
+        0.18956423                TRUE                           TRUE
+        0.02138580               FALSE                           TRUE
+        0.02575488               FALSE                           TRUE
+        0.05587021                TRUE                           TRUE
+        0.04691534               FALSE                           TRUE
+        0.14513585                TRUE                           TRUE
+        0.13039311                TRUE                           TRUE
+        0.10399164                TRUE                           TRUE
+        0.16804524                TRUE                           TRUE
+                NA               FALSE                          FALSE
+                             Fit_status Eligible Selected
+                              Converged     TRUE     TRUE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged    FALSE    FALSE
+                   Optimisation warning    FALSE    FALSE
+                              Converged    FALSE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+                              Converged     TRUE    FALSE
+ non-finite finite-difference value [1]    FALSE    FALSE
 
 Software versions
  Software Version
@@ -345,17 +554,17 @@ Software versions
 
 Group-level model-selection evidence
           Model   Training_ME Training_MSE Training_RMSE Training_MAE
-         SARIMA  9.047961e-03   0.07615252     0.2759575    0.2047985
+         SARIMA  8.312258e-03   0.07526620     0.2743469    0.2045986
             ETS  6.534079e-03   0.07604587     0.2757642    0.2140900
  Trend + season  4.809127e-17   0.07506364     0.2739775    0.2115556
    Holt-Winters -6.639386e-03   0.09072041     0.3011983    0.2328249
  Training_MPE Training_MAPE          ME        MSE      RMSE       MAE
-   -0.1288614      4.344101 -0.05661046 0.08574022 0.2928143 0.2245283
+   -0.1482989      4.337671 -0.04510474 0.08122671 0.2850030 0.2197633
    -0.2057518      4.539225 -0.08465854 0.08686540 0.2947294 0.2351015
    -0.3457165      4.495229 -0.09886510 0.08926057 0.2987651 0.2413566
    -0.4489894      4.954432 -0.10368877 0.09618628 0.3101391 0.2463986
        MPE     MAPE Ljung_Box_p_value White_noise_at_5pct
- -1.464336 4.734634      0.2128721251                TRUE
+ -1.219132 4.622372      0.1045765308                TRUE
  -2.054566 4.967334      0.0720044785                TRUE
  -2.358402 5.109288      0.0006056001               FALSE
  -2.455342 5.221263      0.1491235571                TRUE
@@ -364,26 +573,3 @@ Group-level model-selection evidence
                        TRUE     TRUE    FALSE
                        TRUE    FALSE    FALSE
                        TRUE     TRUE    FALSE
-
-Selected full-data locked-specification refit
-  Model
- SARIMA
-                                                                                                                                                                                                                                                               Training_specification
- Series: y  ARIMA(0,0,2)(2,1,1)[12]   Coefficients:          ma1     ma2     sar1     sar2     sma1       0.2248  0.0903  -0.0086  -0.1301  -0.8869 s.e.  0.0678  0.0696   0.0870   0.0824   0.0959  sigma^2 = 0.08196:  log likelihood = -46.51 AIC=105.02   AICc=105.4   BIC=125.59
-                                                                                                                                                                                                                                                                      Full_data_refit
- Series: y  ARIMA(0,0,2)(2,1,1)[12]   Coefficients:          ma1     ma2     sar1     sar2     sma1       0.2126  0.1008  -0.0013  -0.0774  -0.9343 s.e.  0.0603  0.0617   0.0711   0.0694   0.0776  sigma^2 = 0.0797:  log likelihood = -54.96 AIC=121.92   AICc=122.21   BIC=143.89
-
-2026 forecast
-       date point_forecast lower_80 upper_80 lower_95 upper_95
- 2026-01-01       4.583151 4.220508 4.945793 4.028536 5.137765
- 2026-02-01       5.154355 4.783614 5.525096 4.587356 5.721355
- 2026-03-01       5.247220 4.874681 5.619758 4.677472 5.816968
- 2026-04-01       5.108745 4.736206 5.481283 4.538996 5.678493
- 2026-05-01       4.972689 4.600151 5.345228 4.402941 5.542437
- 2026-06-01       4.873213 4.500675 5.245751 4.303465 5.442961
- 2026-07-01       4.798407 4.425869 5.170946 4.228659 5.368156
- 2026-08-01       4.849762 4.477223 5.222300 4.280013 5.419510
- 2026-09-01       4.703058 4.330520 5.075596 4.133310 5.272806
- 2026-10-01       4.676914 4.304375 5.049452 4.107165 5.246662
- 2026-11-01       4.388020 4.015483 4.760558 3.818274 4.957767
- 2026-12-01       4.223837 3.851304 4.596369 3.654097 4.793576
