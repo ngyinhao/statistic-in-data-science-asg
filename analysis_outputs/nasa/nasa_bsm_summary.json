@@ -1,0 +1,37 @@
+{
+  "model": "Basic structural model",
+  "specification": "Basic structural model: stochastic local level, stochastic seasonal component (period 12), and irregular error; no slope component; exact diffuse initialisation; statsmodels maximum likelihood; 12 initial months excluded from in-sample residual diagnostics",
+  "training_period": "2001-01 to 2020-12",
+  "test_period": "2021-01 to 2025-12",
+  "training_metrics": {
+    "ME": 0.006842821469343713,
+    "MSE": 0.09176461429247866,
+    "RMSE": 0.3029267474035244,
+    "MAE": 0.23636035400828953,
+    "MPE": -0.23658159578299345,
+    "MAPE": 5.002891012559533
+  },
+  "test_metrics": {
+    "ME": -0.09059987958254766,
+    "MSE": 0.08708234939153142,
+    "RMSE": 0.29509718634973703,
+    "MAE": 0.237031247007676,
+    "MPE": -2.1817652427613266,
+    "MAPE": 5.014069237934141
+  },
+  "residual_diagnostics": {
+    "n": 228,
+    "lag": 24,
+    "fit_df": 3,
+    "statistic": 31.418493959949068,
+    "p_value": 0.0669696218753888,
+    "white_noise_at_5pct": true
+  },
+  "nonnegative_test_forecasts": true,
+  "converged": true,
+  "parameters": {
+    "sigma2.irregular": 0.07798139058226895,
+    "sigma2.level": 4.954941586057288e-05,
+    "sigma2.seasonal": 2.9797869033035627e-12
+  }
+}

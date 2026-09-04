@@ -1,0 +1,2 @@
+"Model","Training_specification","Full_data_refit"
+"SARIMA","Series: y  ARIMA(1,0,0)(0,1,1)[12]   Coefficients:          ar1     sma1       0.2087  -0.9554 s.e.  0.0653   0.1190  sigma^2 = 0.07993:  log likelihood = -48.08 AIC=102.16   AICc=102.27   BIC=112.45","Series: y  ARIMA(1,0,0)(0,1,1)[12]   Coefficients:          ar1     sma1       0.2034  -0.9708 s.e.  0.0579   0.1121  sigma^2 = 0.07811:  log likelihood = -56.1 AIC=118.2   AICc=118.28   BIC=129.18"

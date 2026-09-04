@@ -1,0 +1,29 @@
+# SARIMA 27-candidate grid operating record
+
+- Date: 2026-09-04
+- Starting branch: `main`
+- Starting state: dirty working tree with substantial pre-existing report, analysis, generated-document, and EV/BSM changes; all are protected as user work.
+- Requested scope: replace the eight-candidate SARIMA set with a bounded 27-candidate grid over `p`, `q`, and `P` from 0 to 2 while fixing `m=12`, `d=0`, `D=1`, and `Q=1`; explain the basis; refresh affected SARIMA evidence and Markdown sources only.
+- Generated-report boundary: do not regenerate or modify DOCX/PDF files.
+- Merge/release authority: none; do not commit, push, merge, deploy, or access real user data.
+- Required checks: candidate count and uniqueness; training-only selection; convergence, AICc, residual, and non-negativity gates; rerun analysis; reconcile changed evidence and Markdown; verify 60 holdout rows and metrics; confirm non-SARIMA results are unchanged; scoped diff review; `git diff --check`.
+- Implemented scope:
+  - `NASA_Solar_Irradiance_Forecasting.R`: replaced the eight enumerated candidates with the exact Cartesian product `p,q,P = 0:2`; retained `m=12`, `d=0`, `D=1`, and `Q=1`; added executable count, uniqueness, range, and fixed-order assertions; kept training-AICc ranking and convergence, lag-24 Ljung--Box, and non-negative 60-step forecast gates.
+  - `Assignment Report/Individual_Report_1_SARIMA.md`: described the procedure as a restricted diagnostic-guided 27-candidate search, explained why each dimension is fixed or searched, reconciled the leading-candidate table, and updated the appendix code to generate and gate the 27 models without using holdout actuals for order selection.
+  - `NASA_Solar_Irradiance_Model_Research.md`: replaced the obsolete eight-candidate and residual-test descriptions with the verified 27-grid procedure and current diagnostic result.
+  - No group-report edit was required because the selected model and all reported group-level SARIMA values remained unchanged.
+- Analysis execution:
+  - Ran the full R analysis with R 4.6.1, `forecast` 9.0.2, and `jsonlite` 2.0.0, using the existing split-sensitivity CSV only to avoid recomputing unrelated historical split fits.
+  - Ran `NASA_Solar_Irradiance_BSM.py --apply` as the established second pipeline step to restore the current basic structural model rows after the R script generated the three R-family results.
+  - Refreshed affected shared and manual-SARIMA CSV/PNG evidence. The selected candidate remained ARIMA(1,0,0)(0,1,1)[12], so no DOCX or PDF was regenerated or replaced.
+- Verified results:
+  - 27 rows and 27 unique `(p,q,P)` combinations; every dimension spans exactly 0, 1, and 2; all rows fix `d=0`, `D=1`, and `Q=1` with period 12 supplied by the fitter.
+  - 25 candidates converged, 19 passed the white-noise gate, 26 had non-negative candidate forecasts, and 18 passed every eligibility gate. ARIMA(2,0,2)(1,1,1)[12] had an optimisation warning and ARIMA(1,0,2)(2,1,1)[12] failed with a non-finite finite-difference value; both were excluded.
+  - Selected ARIMA(1,0,0)(0,1,1)[12]: training AICc 102.269718450977; lag-24 Ljung--Box p=0.104576530831338; all 60 candidate/test forecasts non-negative.
+  - Holdout evidence contains exactly 60 rows per model. Recalculated SARIMA RMSE 0.285002991260137 and MAE 0.219763339780762 match `nasa_model_accuracy.csv` to machine precision.
+  - Exact before/after CSV comparison showed unchanged non-SARIMA rows in model accuracy, residual diagnostics, parameters, specifications, and holdout predictions.
+  - Static review confirmed `identify_manual_sarima()` receives only `train`, the horizon length, and the declared candidate grid; January 2021--December 2025 actual values are used only after the order is locked.
+  - `git diff --check` passed; only existing line-ending conversion warnings were printed.
+- Files refreshed by the pipeline because they contain SARIMA or shared-model evidence: `analysis_outputs/nasa/nasa_analysis_summary.txt`, `nasa_holdout_predictions.csv`, `nasa_model_accuracy.csv`, `nasa_model_parameters.csv`, `nasa_model_selection.csv`, `nasa_model_specifications.csv`, `nasa_residual_diagnostics.csv`, `nasa_split_rmse_multipliers.csv`, `nasa_split_sensitivity.csv`, `nasa_train_test_comparison.csv`, `nasa_transformation_stationarity_evidence.csv`, both manual-candidate comparison CSV copies, SARIMA identification evidence, and affected SARIMA/shared forecast figures. Other model rows were preserved.
+- Warnings and unresolved items: R emitted locale-setting warnings for `C.UTF-8`, but the analysis completed successfully and all numerical/output checks passed. Generated DOCX/PDF files remain intentionally stale pending separate user authorisation. No commit, push, merge, or deployment was performed.
+- Completion: implemented and independently verified locally; changes remain uncommitted on `main`.

@@ -17,56 +17,63 @@ Assigned model: Seasonal ARIMA · Submission date: [DD Month YYYY]
 <w:p><w:pPr><w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="893" w:bottom="1440" w:left="893" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:num="1" w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:pPr></w:p>
 ```
 
-::: {custom-style="Abstract"}
-**Abstract—**This report evaluates seasonal ARIMA for monthly NASA POWER surface solar irradiance in Kuala Lumpur using a fixed 240-month training period and 60-month test period. The selected ARIMA(0,0,2)(2,1,1)~12~ model achieved RMSE 0.2928 and passed the lag-24 residual white-noise test.
-:::
-
-::: {custom-style="Keywords"}
-**Keywords—**forecasting, NASA POWER, SARIMA, seasonal differencing, solar irradiance.
-:::
-
 # Methodology
 
 This report proposes evaluating SARIMA for monthly Kuala Lumpur solar irradiance (kWh/m²/day) from NASA POWER [@nasa-power-monthly]. SARIMA is a reasonable candidate because it can represent ordinary and annual-lag dependence after differencing. A seasonal model is written as ARIMA$(p,d,q)(P,D,Q)_{12}$, where $p/q$ and $P/Q$ are ordinary/seasonal AR and MA orders, while $d/D$ are ordinary/seasonal differences [@hyndman-athanasopoulos-2021].
 
-The observations were to be split chronologically into a January 2001–December 2020 training period and a January 2021–December 2025 test period. Both contain complete 12-month cycles; random splitting was rejected to prevent future leakage. An exact 70:30 split breaks annual boundaries, while 72:28 sacrifices two additional training years. The need for a variance-stabilising transformation would be assessed using training data only, with the response scale preferred when diagnostics did not justify transformation and direct interpretation remained important.
+An 80:20 chronological split would use January 2001–December 2020 for training and January 2021–December 2025 for testing; chronological order would prevent future leakage. The need for a variance-stabilising transformation would be assessed using training data only, with the response scale preferred when diagnostics did not justify transformation and direct interpretation remained important.
 
-Training plots, monthly summaries, STL decomposition, and stationarity diagnostics would guide ordinary and seasonal differencing. KPSS-guided `ndiffs()` and seasonal-strength `nsdiffs()` would inform $d$ and $D$; zero, ordinary, seasonal, and combined differencing were the alternatives, with the smallest orders that removed supported non-stationarity preferred to avoid over-differencing. `seasonal=TRUE` and period 12 were fixed because the data are monthly and exhibit an annual cycle. `auto.arima()` would search seasonal orders by AICc [@hyndman-khandakar-2008]. `stepwise=FALSE` and `approximation=FALSE` deliberately replace faster defaults with an exhaustive, exact-likelihood search because 240 observations make the additional computation manageable and reduce the risk that a shortcut determines the order. `allowdrift=TRUE` keeps drift eligible rather than forcing it; AICc may retain it only when supported after differencing. Orders and search settings are analytical choices, whereas the AR/MA coefficients are jointly estimated from the training likelihood rather than manually selected.
+Model identification would follow the Box--Jenkins sequence manually using the training sample only. First, the time plot, year-level means and standard deviations, and Guerrero's Box--Cox estimate would be reviewed together; a transformation would be applied only if the seasonal spread clearly changed with the level. Second, $D$ would be chosen by inspecting annual repetition and the lag-12 difference, with `nsdiffs()` used only as supporting evidence; $d$ would then be chosen from the post-seasonal-difference plot, ACF, and KPSS evidence, with `ndiffs()` again treated as a check rather than an automatic decision. The smallest adequate differencing orders would be preferred to avoid overdifferencing.
+
+Third, the ACF and PACF of the locked differenced series would be read at ordinary lags 1--2 and seasonal lags 12 and 24. An ACF cut-off would suggest MA terms, a PACF cut-off would suggest AR terms, and spikes at multiples of 12 would suggest seasonal terms. These diagnostics would define a restricted diagnostic-guided search, not an unrestricted search over every possible SARIMA order. Monthly frequency would fix $m=12$; the differencing evidence would fix $d=0$ and $D=1$; and the seasonal ACF cut-off would fix $Q=1$. The ambiguous ordinary lag-1 ACF/PACF would motivate testing $p,q\in\{0,1,2\}$, while the seasonal PACF evidence would motivate $P\in\{0,1,2\}$. The Cartesian product would therefore contain exactly $3\times3\times3=27$ candidates, including zero-order baselines, first-order interpretations, and nearby second-order sensitivity models. Each would be fitted explicitly with `forecast::Arima()` under the same response scale, no mean or drift, and CSS--ML estimation. Candidates would be ranked by training AICc; the lowest-AICc converged candidate would be accepted only if its response residuals passed a lag-24 Ljung--Box test at 5% with fitted degrees of freedom and its 60 point forecasts were non-negative. A failed gate would trigger the next AICc-ranked candidate. The accepted order would then be locked before the January 2021--December 2025 actual values were used for evaluation. Coefficients would be likelihood estimates rather than values chosen by hand.
 
 Response residuals would be assessed over time, by ACF, and with a lag-24 Ljung–Box test using fitted degrees of freedom [@forecast-checkresiduals]. Material residual autocorrelation would trigger a loop back to model identification. Training and test performance would be reported consistently using ME, MSE, RMSE, MAE, MPE, and MAPE, together with each test-minus-training difference. RMSE would remain primary and MAE secondary; ME and MPE would be interpreted by closeness to zero and sign.
 
-# Data Analysis
+# Data Analysis (Results and Discussion)
 
-**Training evidence and model identification—**The 2001–2020 time plot and STL decomposition showed a strong recurring annual pattern, approximately stable seasonal amplitude, and comparatively modest long-term movement. Training-only diagnostics recommended no ordinary difference ($d=0$) and one seasonal difference ($D=1$): $d=0$ preserved level information when ordinary differencing was unnecessary, while $D=1$ removed the supported annual non-stationarity at lag 12. The response scale was retained because seasonal amplitude was broadly stable in absolute units and a transformation was not sufficiently supported. This evidence established differencing and transformation before order selection.
+**Step 1 - set the seasonal period and transformation.** Monthly observations imply $m=12$. The training plot showed a recurring annual pattern with broadly stable absolute amplitude. The correlation between each training year's mean and standard deviation was only 0.261. Although Guerrero's diagnostic gave a Box--Cox estimate of $\lambda=-0.622$, the visual and mean--spread evidence did not show variance increasing clearly with level. The response scale was therefore retained so forecasts remain directly interpretable in kWh/m²/day.
 
-![Training-only time series and STL components used for model identification.](../analysis_outputs/nasa/figures/nasa_training_identification.png){width=3.20in}
+![Training series, seasonal difference, ACF, and PACF used for manual SARIMA identification.](../analysis_outputs/nasa/manual_sarima/figures/nasa_sarima_manual_identification.png){width=3.20in}
 
 ```{=openxml}
 <w:p><w:r><w:br w:type="column"/></w:r></w:p>
 ```
 
-The exhaustive exact-likelihood search compared admissible seasonal orders by AICc and selected ARIMA$(0,0,2)(2,1,1)_{12}$ (AICc=105.397); thus $p=0,q=2,P=2,Q=1$ came from a declared training criterion, not software defaults. Although drift was allowed, the selected model contained neither mean nor drift, consistent with seasonal differencing and weak long-run movement. Likelihood optimisation jointly fitted MA1=0.2248 (SE=0.0678), MA2=0.0903 (0.0696), SAR1=−0.0086 (0.0870), SAR2=−0.1301 (0.0824), and SMA1=−0.8869 (0.0959); these values were estimated, not manually chosen. The large seasonal MA estimate represents strong annual-lag error correction, whereas uncertain SAR estimates make nearby-order sensitivity checks important. Lag 24 examines two annual cycles, with five fitted coefficients deducted in the Ljung–Box reference distribution. The result, $Q=23.577$, $p=0.213$, did not trigger an order modification.
+**Step 2 - choose $D$ and $d$.** The original ACF remained high at annual multiples (lag 12 = 0.521, lag 24 = 0.456, and lag 36 = 0.486), supporting one seasonal difference. The seasonal-strength check also returned `nsdiffs = 1`, so $D=1$. After applying $y_t-y_{t-12}$, the series fluctuated around a stable level; the KPSS supporting check returned `ndiffs = 0`. Thus $d=0$, avoiding an unnecessary ordinary difference.
+
+**Step 3 - propose $p$, $q$, $P$, and $Q$.** For the seasonally differenced series, the approximate 95% bound was $\pm0.130$. At ordinary lag 1, ACF and PACF were both 0.211, so neither an AR nor an MA interpretation was uniquely indicated. Therefore, $p$ and $q$ each ranged from 0 to 2: order 0 tests absence of that component, order 1 represents the main lag-1 evidence, and order 2 is a nearby sensitivity check rather than a claim that lag 2 was independently significant. At seasonal lag 12, ACF was -0.445 and then fell to -0.116 at lag 24, favouring the fixed $Q=1$. PACF spikes at lags 12 and 24 justified $P=0,1,2$, where $P=0$ is the parsimonious baseline and $P=1,2$ test seasonal AR explanations. Together these choices produced exactly 27 unique candidates. This was exhaustive only within the declared bounded grid; the complete comparison is stored in `nasa_sarima_manual_candidate_comparison.csv`.
+
+| Leading AICc-ranked candidate | AICc | $Q(24)$ $p$ | Decision |
+|---|---:|---:|---|
+| (1,0,0)(0,1,1)~12~ | 102.270 | 0.105 | Selected |
+| (0,0,1)(0,1,1)~12~ | 103.192 | 0.153 | Eligible |
+| (1,0,0)(2,1,1)~12~ | 103.839 | 0.346 | Eligible |
+| (0,0,2)(0,1,1)~12~ | 103.922 | 0.046 | Rejected |
+| (1,0,0)(1,1,1)~12~ | 104.074 | 0.084 | Eligible |
+| (2,0,0)(0,1,1)~12~ | 104.212 | 0.074 | Eligible |
+| (1,0,1)(0,1,1)~12~ | 104.247 | 0.077 | Eligible |
+| (0,0,1)(2,1,1)~12~ | 104.978 | 0.400 | Eligible |
+
+**Step 4 - select and diagnose the model.** All candidates used the same untransformed training sample, $d=0$, $D=1$, $m=12$, no mean or drift, and CSS--ML estimation. ARIMA$(1,0,0)(0,1,1)_{12}$ had the lowest training AICc and passed the declared residual and non-negativity gates. Its fitted coefficients were AR1=0.2087 (SE=0.0653, $p=0.0014$) and SMA1=-0.9554 (SE=0.1190, $p<0.001$). The lag-24 Ljung--Box result was $Q=30.601$ with 22 degrees of freedom and $p=0.1046$, so residual white noise was not rejected. No extra terms were added after this gate passed.
 
 | Metric | Training | Test | Test − training |
 |---|---:|---:|---:|
-| ME (kWh/m²/day) | 0.0090 | −0.0566 | −0.0657 |
-| MSE ((kWh/m²/day)²) | 0.0762 | 0.0857 | 0.0096 |
-| RMSE (kWh/m²/day) | 0.2760 | 0.2928 | 0.0169 |
-| MAE (kWh/m²/day) | 0.2048 | 0.2245 | 0.0197 |
-| MPE | −0.1289% | −1.4643% | −1.3355 pp |
-| MAPE | 4.3441% | 4.7346% | 0.3905 pp |
+| ME (kWh/m²/day) | 0.0083 | −0.0451 | −0.0534 |
+| MSE ((kWh/m²/day)²) | 0.0753 | 0.0812 | 0.0060 |
+| RMSE (kWh/m²/day) | 0.2743 | 0.2850 | 0.0107 |
+| MAE (kWh/m²/day) | 0.2046 | 0.2198 | 0.0152 |
+| MPE | −0.1483% | −1.2191% | −1.0708 pp |
+| MAPE | 4.3377% | 4.6224% | 0.2847 pp |
 
-The lag-24 Ljung–Box p-value was 0.2129. The negative test ME and MPE indicate average overforecasting under the `actual − forecast` convention. Training–test differences are descriptive because fitted residuals and multi-step holdout errors come from different evaluation settings.
+The negative test ME and MPE indicate average overforecasting under the `actual − forecast` convention. Training–test differences are descriptive because fitted residuals and multi-step holdout errors come from different evaluation settings.
 
-![SARIMA test forecasts with 95% intervals.](../analysis_outputs/nasa/figures/nasa_sarima_test_forecast.png){width=3.20in}
+![Manual SARIMA test forecasts with 95% intervals.](../analysis_outputs/nasa/manual_sarima/figures/nasa_sarima_test_forecast.png){width=3.20in}
 
-SARIMA achieved test RMSE 0.2928 and MAE 0.2245, passed the residual gate, and produced non-negative point forecasts. These results support its suitability for the observed series and test period. Strengths are its direct treatment of seasonal differencing and lag dependence and its well-behaved residuals. Limitations include order-search uncertainty, possible sensitivity to transformation and structural change, weakening precision at long horizons, and limited substantive interpretability of interacting MA/SAR terms.
-
-The locked order was re-estimated—not merely copied—on all 300 observations for 2026. Updated coefficients were MA1=0.2126, MA2=0.1008, SAR1=−0.0013, SAR2=−0.0774, and SMA1=−0.9343. Point forecasts ranged from 4.2238 (December) to 5.2472 (March), consistent with the observed seasonal cycle.
+**Step 5 - evaluate on unseen observations.** The locked SARIMA achieved test RMSE 0.2850 and MAE 0.2198 and produced non-negative point forecasts. The holdout actual values were used to evaluate the already-selected order, not to choose among the 27 candidates. Strengths are its parsimonious structure, direct treatment of annual dependence, and acceptable residuals. Limitations include sensitivity to the transformation decision, structural change, and weakening precision at longer horizons.
 
 # Conclusion
 
-SARIMA is suitable and is the defensible final model for this sample: it achieved RMSE 0.2928 and MAE 0.2245, while the lag-24 Ljung–Box result did not reject residual white noise. Its evidence-based seasonal differencing and AICc-selected lag structure are strengths, but uncertain seasonal AR estimates and possible order sensitivity remain limitations. Nearby manual orders, rolling-origin validation, Box–Cox alternatives, and weather regressors should therefore be tested before operational use. Irradiance forecasts do not directly predict photovoltaic electricity generation.
+The restricted diagnostic-guided search selected ARIMA$(1,0,0)(0,1,1)_{12}$: $m=12$ came from monthly frequency, $D=1$ from persistent annual dependence, $d=0$ from the stationary post-seasonal-difference behaviour, and $Q=1$ from the seasonal ACF cut-off. The selected $p=1$, $q=0$, and $P=0$ combination had the lowest eligible training AICc within the 27-model grid. The model achieved test RMSE 0.2850 and MAE 0.2198, while the lag-24 Ljung--Box result did not reject residual white noise. These results evaluate the model only where actual values are available. Rolling-origin validation and weather regressors should be examined before operational use. Irradiance forecasts do not directly predict photovoltaic electricity generation.
 
 # References
 
@@ -79,19 +86,57 @@ SARIMA is suitable and is the defensible final model for this sample: it achieve
 
 Canonical source: `../NASA_Solar_Irradiance_Forecasting.R`. No random procedure is used, so no random seed is required.
 
-![SARIMA training response residuals and residual ACF.](../analysis_outputs/nasa/figures/nasa_sarima_diagnostics.png){width=3.20in}
+![Manual SARIMA training response residuals and residual ACF.](../analysis_outputs/nasa/manual_sarima/figures/nasa_sarima_diagnostics.png){width=3.20in}
 
 ```r
 train <- window(series, end = c(2020, 12))
 test  <- window(series, start = c(2021, 1))
 
-sarima_fit <- auto.arima(
-  train, seasonal = TRUE, stepwise = FALSE,
-  approximation = FALSE, allowdrift = TRUE
+# Manual transformation and differencing decisions, based on training only.
+BoxCox.lambda(train, method = "guerrero")       # supporting diagnostic
+ndiffs(train, test = "kpss")                    # supporting diagnostic
+nsdiffs(train, test = "seas")                   # supporting diagnostic
+d <- 0L; D <- 1L; m <- 12L                       # decisions after plot review
+identified <- diff(train, lag = m, differences = D)
+Acf(identified, lag.max = 48)
+Pacf(identified, lag.max = 48)
+
+# Restricted 3 x 3 x 3 grid based on the training diagnostics.
+candidates <- expand.grid(
+  p = 0:2, q = 0:2, P = 0:2,
+  KEEP.OUT.ATTRS = FALSE
 )
+stopifnot(nrow(candidates) == 27L, nrow(unique(candidates)) == 27L)
+
+fits <- lapply(seq_len(nrow(candidates)), function(i) tryCatch(
+  Arima(
+    train, order = c(candidates$p[i], d, candidates$q[i]),
+    seasonal = list(order = c(candidates$P[i], D, 1L), period = m),
+    include.mean = FALSE, include.drift = FALSE, method = "CSS-ML"
+  ),
+  error = function(e) e
+))
+
+# Failed or non-converged fits remain in the audit table but cannot be selected.
+fitted_ok <- !vapply(fits, inherits, logical(1), what = "error")
+candidate_aicc <- rep(Inf, length(fits))
+converged <- passes_gate <- nonnegative <- rep(FALSE, length(fits))
+for (i in which(fitted_ok)) {
+  candidate_aicc[i] <- fits[[i]]$aicc
+  converged[i] <- is.null(fits[[i]]$code) || fits[[i]]$code == 0L
+  residual <- as.numeric(train) - as.numeric(fitted(fits[[i]]))
+  passes_gate[i] <- Box.test(
+    residual, lag = 24, type = "Ljung-Box",
+    fitdf = length(coef(fits[[i]]))
+  )$p.value > 0.05
+  # Forecasts set the plausibility gate but are not compared with test actuals.
+  candidate_fc <- forecast(fits[[i]], h = 60L)
+  nonnegative[i] <- all(as.numeric(candidate_fc$mean) >= 0)
+}
+ranked <- order(candidate_aicc)
+eligible <- converged & passes_gate & nonnegative
+selected_index <- ranked[which(eligible[ranked])[1]]
+sarima_fit <- fits[[selected_index]]
+# Only after the order is locked are the holdout actual values used for evaluation.
 sarima_fc <- forecast(sarima_fit, h = length(test), level = c(80, 95))
-response_residuals <- as.numeric(train) - as.numeric(fitted(sarima_fit))
-Box.test(response_residuals, lag = 24, type = "Ljung-Box",
-         fitdf = length(coef(sarima_fit)))
-metric_row("SARIMA", sarima_fc, test, train)
 ```

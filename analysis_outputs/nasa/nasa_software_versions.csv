@@ -1,4 +1,6 @@
-"Software","Version"
-"R","4.6.1"
-"forecast","9.0.2"
-"jsonlite","2.0.0"
+Software,Version
+R,4.6.1
+forecast,9.0.2
+jsonlite,2.0.0
+Python,3.13.9
+statsmodels,0.14.5

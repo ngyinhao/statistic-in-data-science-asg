@@ -17,33 +17,19 @@ Assigned model: Error–Trend–Seasonal state-space model · Submission date: [
 <w:p><w:pPr><w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="893" w:bottom="1440" w:left="893" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:num="1" w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr></w:pPr></w:p>
 ```
 
-::: {custom-style="Abstract"}
-**Abstract—**This report evaluates an ETS state-space model for monthly NASA POWER surface solar irradiance in Kuala Lumpur. Automatic selection produced ETS(A,N,A), which achieved test RMSE 0.2947 and passed the declared residual diagnostic threshold.
-:::
-
-::: {custom-style="Keywords"}
-**Keywords—**ETS, exponential smoothing, forecasting, state space, solar irradiance.
-:::
-
 # Methodology
 
 This report proposes evaluating ETS for the monthly Kuala Lumpur NASA POWER irradiance series [@nasa-power-monthly]. ETS identifies the observation error, trend, and seasonal state forms in that order and provides coherent point forecasts and intervals. It generalises classical exponential smoothing by selecting among state-space structures with a likelihood-based criterion [@hyndman-athanasopoulos-2021].
 
-The chronological design would use January 2001–December 2020 for training and January 2021–December 2025 for a single final test. Complete annual cycles were retained to protect seasonal estimation, while random splitting and half-year boundaries were rejected. Transformation would be assessed using training data only, with a common response scale preferred when diagnostics did not require otherwise.
+An 80:20 chronological split would use January 2001–December 2020 for training and January 2021–December 2025 for testing; chronological order would prevent future leakage. Transformation would be assessed using training data only, with a common response scale preferred when diagnostics did not require otherwise.
 
-The unrestricted automatic call `ets(train)` would deliberately search the standard ETS error, trend, damping, and seasonal structures rather than impose an unsupported component restriction. Retaining this broad search is justified by uncertainty about the appropriate state-space form, not merely because it is the software default. The training time plot, STL components, and variance evidence would establish plausible forms, while minimum AICc would select among fitted ETS candidates. The selected structure would then have to pass residual and physical-plausibility checks. Component forms are selected settings; α, β, γ, and φ, when applicable, are jointly estimated by likelihood rather than manually chosen.
+The unrestricted automatic call `ets(train)` would deliberately search the standard ETS error, trend, damping, and seasonal structures rather than impose an unsupported component restriction. Retaining this broad search would be justified by uncertainty about the appropriate state-space form, not merely because it is the software default. The training time plot, decomposition components, and variance evidence would establish plausible forms, while minimum AICc would select among fitted ETS candidates. The selected structure would then have to pass residual and physical-plausibility checks. Component forms would be selected settings; α, β, γ, and φ, when applicable, would be jointly estimated by likelihood rather than manually chosen.
 
 Diagnostics would use response residuals (`observed − fitted`) so that departures remained interpretable on the original response scale rather than as multiplicative innovations [@forecast-residuals]. Residual time plots, ACF, and a lag-24 Ljung–Box test with the applicable fitted degrees of freedom would determine whether a specification loop-back was needed. Training and test performance would be reported consistently using ME, MSE, RMSE, MAE, MPE, and MAPE, together with each test-minus-training difference. ME and MPE would be judged by closeness to zero and sign; the remaining error measures would be minimised.
 
-# Data Analysis
+# Data Analysis (Results and Discussion)
 
-**Training evidence and model identification—**The 2001–2020 time plot and STL decomposition indicated pronounced annual seasonality of roughly stable absolute amplitude and comparatively modest trend movement. Stable absolute amplitude supported additive seasonal candidates and retention of the response scale; modest movement made no-trend candidates plausible. These plots did not select the final form by themselves. An unrestricted error–trend–season search was retained so additive and multiplicative errors, absent or present trend, damping, and seasonal forms could compete; minimum training AICc, followed by residual and plausibility gates, was the declared criterion.
-
-![Training-only time series and STL components used for model identification.](../analysis_outputs/nasa/figures/nasa_training_identification.png){width=3.20in}
-
-```{=openxml}
-<w:p><w:r><w:br w:type="column"/></w:r></w:p>
-```
+**Training evidence and model identification—**Training-only decomposition indicated pronounced annual seasonality of roughly stable absolute amplitude and comparatively modest trend movement. Stable absolute amplitude supported additive seasonal candidates and retention of the response scale; modest movement made no-trend candidates plausible. This evidence did not select the final form by itself. An unrestricted error–trend–season search was retained so additive and multiplicative errors, absent or present trend, damping, and seasonal forms could compete; minimum training AICc, followed by residual and plausibility gates, was the declared criterion.
 
 The search selected ETS(A,N,A), with additive errors, no trend, and additive seasonality, because it minimised AICc within the searched family (729.156) and remained physically plausible. Additive error and seasonality are also consistent with response-scale variation, while no trend avoids unsupported long-run extrapolation. Maximum-likelihood optimisation fitted α=0.02036 and γ=0.0001005; neither was manually selected. The small α implies slow level updating, and γ near its lower boundary implies that the estimated monthly seasonal states are almost fixed. β and damping φ were not estimated because the selected structure contained no trend. Lag 24 examines two annual cycles and uses two fitted smoothing degrees of freedom; Ljung–Box gave $Q=32.326$, $p=0.072$, so white noise was not rejected, although the near-threshold result and boundary γ warrant constrained-model sensitivity checks.
 

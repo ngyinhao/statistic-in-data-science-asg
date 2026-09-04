@@ -9,15 +9,15 @@ The analysis contains exactly **four forecasting models**, defined together in [
 1. Trend plus season regression
 2. Additive Holt–Winters
 3. Automatic ETS
-4. Automatic seasonal ARIMA (SARIMA)
+4. Manually identified seasonal ARIMA (SARIMA)
 
-The monthly series has seasonal period `m = 12`. Models are trained through December 2023 and evaluated on the January 2024–December 2025 holdout. The repository ranks them by holdout RMSE, uses that same holdout to select the winning model label, reruns that model class on all 300 observations, and forecasts 2026 ([source lines 64–66 and 163–165](NASA_Solar_Irradiance_Forecasting.R#L64-L66)). Consequently, this is a **selection holdout**, not an untouched final test set from which to claim unbiased future performance.
+The monthly series has seasonal period `m = 12`. Models are trained through December 2020 and evaluated only on the 60 known observations in the January 2021–December 2025 holdout. SARIMA order identification uses only the training sample, and its order is locked before this holdout is examined. No forecast is required beyond December 2025 because the project is assessing model accuracy against observed actual values.
 
 ## Results currently recorded in the repository
 
 | Model | Fitted specification | Holdout RMSE | Holdout MAE | Role |
 |---|---:|---:|---:|---|
-| SARIMA | ARIMA(1,0,0)(2,1,0)[12] on training data | 0.2013 | 0.1617 | Selected label |
+| SARIMA | ARIMA(1,0,0)(0,1,1)[12] on training data | 0.2850 | 0.2198 | Manually selected and locked |
 | Holt–Winters | additive without trend; α=0.0307, γ=0.1223 | 0.2109 | 0.1685 | Strong alternative |
 | ETS | ETS(M,N,A) | 0.2303 | 0.1932 | State-space exponential smoothing |
 | Trend + season | `y ~ trend + season` | 0.2402 | 0.2009 | Interpretable regression |
@@ -105,33 +105,33 @@ The default call already performs model and parameter tuning. Important controls
 
 The exact fitted ETS smoothing coefficients were not exported to CSV, so they should not be guessed. Export `coef(models[["ETS"]]$fit)` in a reproducible rerun if those values are required.
 
-## 4. Automatic SARIMA
+## 4. Manually identified SARIMA
 
 ### How it works
 
 A seasonal ARIMA model combines non-seasonal AR, differencing, and MA orders `(p,d,q)` with seasonal orders `(P,D,Q)_m`. The seasonal polynomials act at multiples of `m` and multiply the non-seasonal polynomials ([seasonal ARIMA formulation](https://otexts.com/fpp2/seasonal-arima.html)). The selected **training-period** repository model is:
 
 $$
-\text{ARIMA}(1,0,0)(2,1,0)_{12}.
+\text{ARIMA}(1,0,0)(0,1,1)_{12}.
 $$
 
 Interpretation:
 
-- `p=1`: one non-seasonal autoregressive lag;
+- `p=1`: one non-seasonal autoregressive lag, proposed by the lag-1 ACF/PACF pattern;
 - `d=0`: no ordinary first difference;
 - `q=0`: no non-seasonal moving-average term;
-- `P=2`: autoregressive dependence at seasonal lags 12 and 24;
+- `P=0`: added seasonal AR terms did not improve AICc enough to justify their complexity;
 - `D=1`: one seasonal difference, `y_t-y_{t-12}`, removes the repeating annual level;
-- `Q=0`: no seasonal moving-average term;
+- `Q=1`: one seasonal moving-average term, proposed by the seasonal ACF cut-off;
 - `m=12`: monthly seasonality.
 
-The model therefore forecasts changes relative to the same month last year using recent and seasonal autocorrelation. The fitted AR coefficients themselves were not exported and must not be inferred from the order alone.
+The model forecasts changes relative to the same month last year using recent autoregressive dependence and annual-lag error correction. On the training sample, AR1 was 0.2087 and SMA1 was -0.9554; both were estimated by likelihood after the order was chosen.
 
-Crucially, `fit_models(series, 12L)` reruns `auto.arima()` after the SARIMA label wins. The resulting full-data order and coefficients are not written to `nasa_model_specifications.csv`. Therefore **ARIMA(1,0,0)(2,1,0)[12] cannot be asserted to be the exact model that generated the saved 2026 forecasts**; it is the persisted training-period winner. The full-data automatic search may choose the same or a different order.
+The order is locked before holdout evaluation. The training fit is then used to produce the 60 January 2021--December 2025 forecasts that are compared with observed actual values.
 
-### Current automatic search
+### Current manual identification
 
-The code uses `seasonal = TRUE`, `stepwise = FALSE`, `approximation = FALSE`, and `allowdrift = TRUE`. This is an exhaustive candidate search within the function’s order limits, scored with exact (not approximated) likelihood-based information criteria. The package authors explicitly recommend `stepwise = FALSE` and `approximation = FALSE` when analyzing one series and computation time permits ([official `auto.arima()` reference](https://pkg.robjhyndman.com/forecast/reference/auto.arima.html)). By default, the function selects `d` using a unit-root procedure, `D` using seasonal strength, and other orders by AICc.
+The code does not call `auto.arima()`. It fixes $m=12$ from the monthly sampling frequency; assesses transformation from the training plot, annual mean--standard-deviation relationship, and Guerrero estimate; sets $D=1$ from persistent annual ACF and seasonal-strength evidence; sets $d=0$ from the stable seasonally differenced series and KPSS evidence; and fixes $Q=1$ from the seasonal ACF cut-off. Because the ordinary lag-1 ACF and PACF are both significant but do not uniquely distinguish AR from MA structure, the restricted diagnostic-guided search tests $p,q\in\{0,1,2\}$. The seasonal PACF evidence similarly motivates $P\in\{0,1,2\}$. Their Cartesian product gives exactly 27 unique models, covering absent, first-order, and nearby second-order components without claiming to search every possible SARIMA order. Each candidate is fitted explicitly with `forecast::Arima()` on the same response basis and ranked by training AICc, subject to convergence, a lag-24 Ljung--Box residual gate, and non-negative 60-step candidate forecasts. Holdout actual values do not enter this order selection. ARIMA(1,0,0)(0,1,1)[12] had the lowest eligible AICc (102.2697) and passed the residual gate ($p=0.1046$).
 
 ### Tuning
 
@@ -141,20 +141,20 @@ The code uses `seasonal = TRUE`, `stepwise = FALSE`, `approximation = FALSE`, an
 - **Mean/drift**: `allowmean` and `allowdrift` determine whether these terms are considered when mathematically permitted. Although `allowdrift = TRUE` is set, the selected `d=0, D=1` specification does not report a drift term.
 - **Transformation λ and `biasadj`**: available as for ETS. Consider λ only if variance grows with level; validate on past-origin forecasts.
 - **External regressors `xreg`**: useful for physically meaningful predictors, but future regressor paths are required and their uncertainty is otherwise omitted.
-- **Search/computation**: `stepwise`, `nmodels`, `approximation`, `truncate`, `parallel`, and `num.cores` tune search cost. They should not alter the target definition; exact exhaustive search is already feasible for this 300-point monthly series.
+- **Search/computation**: `stepwise`, `nmodels`, `approximation`, `truncate`, `parallel`, and `num.cores` tune automated-search cost. The present implementation instead evaluates every model within its declared 27-candidate bounded grid; it is exhaustive within that grid, not across all possible SARIMA orders.
 - **Estimation method**: the default uses conditional sums of squares for starting values and maximum likelihood for the final fit. Change `method` only for missing-data or convergence reasons.
-- **Diagnostics**: inspect residual ACF/PACF and Ljung–Box results, parameter significance, characteristic roots, and forecast plausibility. The repository’s SARIMA Ljung–Box p-value is 0.223, but its direct `Box.test()` call does not subtract fitted-model degrees of freedom, so that p-value should be treated as approximate.
+- **Diagnostics**: inspect residual ACF/PACF and Ljung–Box results, parameter significance, characteristic roots, and forecast plausibility. The selected SARIMA's lag-24 Ljung–Box test uses two fitted-model degrees of freedom and gives $p=0.1046$.
 
 ## How tuning should be performed for this project
 
-The present two-year holdout provides a useful model comparison, but because it is also used to choose the winner it is not an untouched final performance audit. A more defensible tuning workflow is:
+The present five-year holdout provides a useful model comparison, but because it is also used to choose the winner it is not an untouched final performance audit. A more defensible tuning workflow is:
 
 1. On data through December 2023, use rolling-origin cross-validation with horizons that match the decision (especially `h=12`, optionally `h=1:24`) to choose structures and hyperparameters.
 2. Lock every candidate and selection rule before evaluating January 2024–December 2025 once. If that period has already influenced tuning, reserve a later period or report the result explicitly as selection performance rather than unbiased test performance.
 3. Define a small, scientifically plausible candidate grid for each model class.
 4. Report ME, MSE, RMSE, MAE, MPE, and MAPE on the common horizon. Rank primarily by horizon-appropriate RMSE/MAE, use ME/MPE to diagnose signed bias, and use AICc only for choosing structures within a likelihood model, not across unrelated model classes.
 5. Reject candidates with implausible solar forecasts, unstable parameters, or materially autocorrelated residuals.
-6. Lock the tuning choice, evaluate once on the final holdout, then refit the chosen specification to all observations for the 2026 forecast.
+6. Lock the tuning choice and evaluate once on the final holdout. Stop at December 2025 so that every reported forecast can be compared with an actual observation.
 
 Recommended candidate set:
 
@@ -163,7 +163,7 @@ Recommended candidate set:
 | Trend + season | no trend vs linear trend; month dummies vs low-order Fourier terms; optional Box–Cox |
 | Holt–Winters | additive vs multiplicative seasonality; damped vs undamped trend; optimized α/β/γ |
 | ETS | automatic `ZZZ`; additive-only; fixed plausible structures; default likelihood vs horizon-aligned AMSE |
-| SARIMA | current exhaustive auto search; nearby manually constrained orders; alternative differencing tests; optional Box–Cox |
+| SARIMA | manual ACF/PACF candidate set; alternative differencing and Box--Cox decisions; rolling-origin sensitivity |
 
 Because irradiance is physically non-negative, any model/interval producing materially negative forecasts should be reconsidered or fitted on a positivity-preserving scale. Conversely, transformations should not be applied automatically: the observed level is stable and seasonal amplitude should first be checked against level before choosing multiplicative seasonality or a log transform.
 
@@ -173,12 +173,12 @@ Because irradiance is physically non-negative, any model/interval producing mate
 - Holdout MAE/RMSE are comparable because the code computes every holdout error directly as actual minus point forecast.
 - Save `sessionInfo()` or a lockfile with the R and `forecast` package versions. Automatic-search results can change across versions.
 - Export the complete fitted parameter sets, AIC/AICc/BIC, convergence status, and chosen transformations. The current specification CSV records model structure but not ETS or ARIMA coefficients.
-- Persist the **full-data refit** specification after `full_models <- fit_models(series, 12L)`. At present, only training-period specifications are saved, so the precise ETS/SARIMA structure behind the final 2026 forecast cannot be audited from exported artifacts.
+- Persist the locked **training specification**, its 60 holdout forecasts, and the matching actual values so the accuracy calculation remains reproducible.
 - For Ljung–Box tests on fitted models, pass an appropriate `fitdf` or use `forecast::checkresiduals()` so degrees of freedom are handled explicitly.
 
 ## Bottom line
 
-SARIMA is the current selected label because it has the lowest 2024–2025 selection-holdout RMSE (0.2013), narrowly ahead of additive Holt–Winters (0.2109). This is evidence for a strong annual cycle plus serial dependence, not proof that SARIMA will always dominate, and the winning error is not an unbiased final-test estimate. The most useful next tuning improvement is rolling-origin validation within the pre-2024 period, followed by a locked one-time future-period comparison. The final report should keep the regression for interpretability and compare a damped ETS/Holt–Winters candidate against the current exhaustive SARIMA search. It should also persist the final full-data model specification so the 2026 generator is reproducible.
+The training-only Box--Jenkins process selected ARIMA(1,0,0)(0,1,1)[12] by AICc and residual diagnostics. On the fixed January 2021--December 2025 test period, it achieved RMSE 0.2850 and MAE 0.2198. This supports a strong annual cycle plus serial dependence, not universal SARIMA superiority. Rolling-origin sensitivity and alternative transformation decisions remain useful extensions. Forecasting beyond the observed test range is not part of this model-accuracy assessment.
 
 ## Primary sources
 

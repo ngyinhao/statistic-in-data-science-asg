@@ -27,8 +27,11 @@ assignment_dir <- dirname(script_path)
 output_dir <- file.path(assignment_dir, "analysis_outputs", "nasa")
 raw_dir <- file.path(output_dir, "raw")
 figure_dir <- file.path(output_dir, "figures")
+sarima_output_dir <- file.path(output_dir, "manual_sarima")
+sarima_figure_dir <- file.path(sarima_output_dir, "figures")
 dir.create(raw_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(figure_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(sarima_figure_dir, recursive = TRUE, showWarnings = FALSE)
 
 latitude <- 3.1390
 longitude <- 101.6869
@@ -89,14 +92,186 @@ response_residuals <- function(fit, y) {
   actual_values - fitted_values
 }
 
-fit_models <- function(y, h) {
+fit_explicit_sarima <- function(y, specification) {
+  Arima(
+    y,
+    order = unname(as.integer(unlist(
+      specification[c("p", "d", "q")], use.names = FALSE
+    ))),
+    seasonal = list(
+      order = unname(as.integer(unlist(
+        specification[c("P", "D", "Q")], use.names = FALSE
+      ))),
+      period = 12L
+    ),
+    include.mean = FALSE,
+    include.drift = FALSE,
+    method = "CSS-ML"
+  )
+}
+
+format_sarima_order <- function(specification) {
+  sprintf(
+    "ARIMA(%d,%d,%d)(%d,%d,%d)[12]",
+    specification[["p"]], specification[["d"]], specification[["q"]],
+    specification[["P"]], specification[["D"]], specification[["Q"]]
+  )
+}
+
+# Box-Jenkins identification is deliberately confined to the training sample.
+# The tests are supporting evidence, not an automatic order selector: the plot,
+# seasonal amplitude, differenced series, ACF and PACF remain the decision basis.
+box_cox_lambda <- BoxCox.lambda(train, method = "guerrero")
+training_year_matrix <- matrix(as.numeric(train), ncol = frequency(train), byrow = TRUE)
+training_year_means <- rowMeans(training_year_matrix)
+training_year_sds <- apply(training_year_matrix, 1, sd)
+mean_sd_correlation <- cor(training_year_means, training_year_sds)
+kpss_d_recommendation <- ndiffs(train, test = "kpss")
+seasonal_d_recommendation <- nsdiffs(train, test = "seas")
+
+# Manual decisions, locked before examining the 2021-2025 holdout.
+selected_transformation <- "None (response scale retained)"
+manual_d <- 0L
+manual_D <- 1L
+sarima_identification_series <- diff(train, lag = 12L, differences = manual_D)
+if (manual_d > 0L) {
+  sarima_identification_series <- diff(
+    sarima_identification_series, differences = manual_d
+  )
+}
+
+acf_object <- acf(sarima_identification_series, lag.max = 48L, plot = FALSE)
+pacf_object <- pacf(sarima_identification_series, lag.max = 48L, plot = FALSE)
+acf_pacf_evidence <- data.frame(
+  Lag = 1:48,
+  ACF = as.numeric(acf_object$acf)[2:49],
+  PACF = as.numeric(pacf_object$acf)[1:48],
+  Approximate_95pct_bound = 1.96 / sqrt(length(sarima_identification_series)),
+  stringsAsFactors = FALSE
+)
+
+# Restricted diagnostic-guided search. The training diagnostics fix d = 0,
+# D = 1, Q = 1, and m = 12; ambiguity in the ordinary lag-1 ACF/PACF and
+# seasonal PACF motivates a bounded search over p, q, and P from 0 through 2.
+candidate_orders <- expand.grid(
+  p = 0:2,
+  q = 0:2,
+  P = 0:2,
+  KEEP.OUT.ATTRS = FALSE,
+  stringsAsFactors = FALSE
+)
+sarima_candidates <- data.frame(
+  Candidate = sprintf("M%02d", seq_len(nrow(candidate_orders))),
+  p = candidate_orders$p,
+  d = manual_d,
+  q = candidate_orders$q,
+  P = candidate_orders$P,
+  D = manual_D,
+  Q = 1L,
+  Rationale = sprintf(
+    paste(
+      "Restricted diagnostic-guided search: p=%d and q=%d test low ordinary",
+      "orders because lag-1 ACF/PACF were both significant but ambiguous;",
+      "P=%d tests the seasonal PACF evidence; d=0, D=1, Q=1, and m=12",
+      "are fixed from training-only stationarity, seasonal-strength, and ACF evidence"
+    ),
+    candidate_orders$p,
+    candidate_orders$q,
+    candidate_orders$P
+  ),
+  stringsAsFactors = FALSE
+)
+
+stopifnot(
+  nrow(sarima_candidates) == 27L,
+  nrow(unique(sarima_candidates[c("p", "q", "P")])) == 27L,
+  identical(sort(unique(sarima_candidates$p)), 0:2),
+  identical(sort(unique(sarima_candidates$q)), 0:2),
+  identical(sort(unique(sarima_candidates$P)), 0:2),
+  all(sarima_candidates$d == 0L),
+  all(sarima_candidates$D == 1L),
+  all(sarima_candidates$Q == 1L)
+)
+
+identify_manual_sarima <- function(y, h, candidates) {
+  candidate_fits <- vector("list", nrow(candidates))
+  comparison_rows <- vector("list", nrow(candidates))
+
+  for (i in seq_len(nrow(candidates))) {
+    specification <- candidates[i, c("p", "d", "q", "P", "D", "Q")]
+    fitted_candidate <- tryCatch(
+      fit_explicit_sarima(y, specification),
+      error = function(e) e
+    )
+    candidate_fits[[i]] <- fitted_candidate
+
+    if (inherits(fitted_candidate, "error")) {
+      comparison_rows[[i]] <- data.frame(
+        candidates[i, ], Specification = format_sarima_order(specification),
+        AIC = NA_real_, AICc = NA_real_, BIC = NA_real_,
+        Ljung_Box_lag = NA_integer_, Fit_df = NA_integer_,
+        Ljung_Box_p_value = NA_real_, White_noise_at_5pct = FALSE,
+        Nonnegative_candidate_forecast = FALSE,
+        Fit_status = conditionMessage(fitted_candidate),
+        stringsAsFactors = FALSE
+      )
+      next
+    }
+
+    candidate_residuals <- as.numeric(na.omit(response_residuals(fitted_candidate, y)))
+    fit_df <- length(coef(fitted_candidate))
+    lag_value <- 24L
+    residual_test <- Box.test(
+      candidate_residuals, lag = lag_value, type = "Ljung-Box", fitdf = fit_df
+    )
+    candidate_forecast <- forecast(fitted_candidate, h = h)
+    converged <- is.null(fitted_candidate$code) || fitted_candidate$code == 0L
+    comparison_rows[[i]] <- data.frame(
+      candidates[i, ], Specification = format_sarima_order(specification),
+      AIC = fitted_candidate$aic, AICc = fitted_candidate$aicc,
+      BIC = fitted_candidate$bic, Ljung_Box_lag = lag_value, Fit_df = fit_df,
+      Ljung_Box_p_value = residual_test$p.value,
+      White_noise_at_5pct = residual_test$p.value > 0.05,
+      Nonnegative_candidate_forecast = all(as.numeric(candidate_forecast$mean) >= 0),
+      Fit_status = if (converged) "Converged" else "Optimisation warning",
+      stringsAsFactors = FALSE
+    )
+  }
+
+  comparison <- do.call(rbind, comparison_rows)
+  comparison$Eligible <- comparison$Fit_status == "Converged" &
+    comparison$White_noise_at_5pct & comparison$Nonnegative_candidate_forecast
+  comparison <- comparison[order(comparison$AICc, na.last = TRUE), ]
+  row.names(comparison) <- NULL
+  eligible <- which(comparison$Eligible & is.finite(comparison$AICc))
+  if (length(eligible) == 0L) {
+    stop("No manually specified SARIMA candidate passed the residual and plausibility gates.")
+  }
+  comparison$Selected <- FALSE
+  comparison$Selected[eligible[1]] <- TRUE
+
+  selected_id <- comparison$Candidate[eligible[1]]
+  original_index <- match(selected_id, candidates$Candidate)
+  list(
+    fit = candidate_fits[[original_index]],
+    forecast = forecast(candidate_fits[[original_index]], h = h),
+    specification = candidates[original_index, c("p", "d", "q", "P", "D", "Q")],
+    comparison = comparison
+  )
+}
+
+manual_sarima <- identify_manual_sarima(train, test_h, sarima_candidates)
+locked_sarima_specification <- manual_sarima$specification
+
+fit_models <- function(y, h, sarima_specification, prefitted_sarima = NULL) {
   trend_fit <- tslm(y ~ trend + season)
   hw_fit <- HoltWinters(y, beta = FALSE, seasonal = "additive")
   ets_fit <- ets(y)
-  arima_fit <- auto.arima(
-    y, seasonal = TRUE, stepwise = FALSE,
-    approximation = FALSE, allowdrift = TRUE
-  )
+  arima_fit <- if (is.null(prefitted_sarima)) {
+    fit_explicit_sarima(y, sarima_specification)
+  } else {
+    prefitted_sarima
+  }
   list(
     `Trend + season` = list(
       fit = trend_fit, fc = forecast(trend_fit, h = h),
@@ -111,7 +286,7 @@ fit_models <- function(y, h) {
       residuals = response_residuals(ets_fit, y)
     ),
     SARIMA = list(
-      fit = arima_fit, fc = forecast(arima_fit, h = h),
+      fit = arima_fit, fc = forecast(arima_fit, h = h, level = c(80, 95)),
       residuals = response_residuals(arima_fit, y)
     )
   )
@@ -153,7 +328,10 @@ metric_row <- function(name, fc, actual, training = NULL) {
   )
 }
 
-models <- fit_models(train, test_h)
+models <- fit_models(
+  train, test_h, locked_sarima_specification,
+  prefitted_sarima = manual_sarima$fit
+)
 accuracy_table <- do.call(rbind, lapply(names(models), function(nm) {
   test_metrics <- metric_row(nm, models[[nm]]$fc, test, train)
   train_residuals <- as.numeric(models[[nm]]$residuals)
@@ -232,7 +410,11 @@ if (nzchar(split_cache_path)) {
   split_sensitivity <- do.call(rbind, lapply(split_test_months, function(split_h) {
     split_train <- head(series, length(series) - split_h)
     split_test <- tail(series, split_h)
-    split_models <- if (split_h == test_h) models else fit_models(split_train, split_h)
+    split_models <- if (split_h == test_h) {
+      models
+    } else {
+      fit_models(split_train, split_h, locked_sarima_specification)
+    }
     train_n <- length(split_train)
     total_n <- length(series)
 
@@ -463,20 +645,56 @@ write.csv(
   row.names = FALSE
 )
 
-box_cox_lambda <- BoxCox.lambda(train, method = "guerrero")
 differencing_evidence <- data.frame(
   Item = c(
-    "Guerrero_Box_Cox_lambda", "Selected_transformation",
-    "Recommended_nonseasonal_differences", "Recommended_seasonal_differences"
+    "Guerrero_Box_Cox_lambda", "Annual_mean_SD_correlation",
+    "Selected_transformation", "Transformation_decision_basis",
+    "KPSS_ndiffs_supporting_check",
+    "Seasonal_strength_nsdiffs_supporting_check", "Manually_selected_d",
+    "d_decision_basis", "Manually_selected_D", "D_decision_basis",
+    "Seasonal_period"
   ),
   Value = c(
-    box_cox_lambda, "None (response scale retained)",
-    ndiffs(train, test = "kpss"), nsdiffs(train, test = "seas")
+    box_cox_lambda, mean_sd_correlation, selected_transformation,
+    paste0(
+      "Training plot and year-level mean-versus-SD check did not show a ",
+      "clear increase in seasonal amplitude with level; retain interpretable units"
+    ),
+    kpss_d_recommendation, seasonal_d_recommendation, manual_d,
+    "No sustained ordinary trend remained after seasonal differencing; avoid over-differencing",
+    manual_D,
+    "Strong annual pattern and seasonal-strength check support one lag-12 difference",
+    12L
   ), stringsAsFactors = FALSE
 )
 write.csv(
   differencing_evidence,
   file.path(output_dir, "nasa_transformation_stationarity_evidence.csv"),
+  row.names = FALSE
+)
+write.csv(
+  differencing_evidence,
+  file.path(sarima_output_dir, "nasa_transformation_stationarity_evidence.csv"),
+  row.names = FALSE
+)
+write.csv(
+  acf_pacf_evidence,
+  file.path(output_dir, "nasa_sarima_identification_acf_pacf.csv"),
+  row.names = FALSE
+)
+write.csv(
+  acf_pacf_evidence,
+  file.path(sarima_output_dir, "nasa_sarima_identification_acf_pacf.csv"),
+  row.names = FALSE
+)
+write.csv(
+  manual_sarima$comparison,
+  file.path(output_dir, "nasa_sarima_manual_candidate_comparison.csv"),
+  row.names = FALSE
+)
+write.csv(
+  manual_sarima$comparison,
+  file.path(sarima_output_dir, "nasa_sarima_manual_candidate_comparison.csv"),
   row.names = FALSE
 )
 
@@ -498,55 +716,24 @@ best_model <- if (length(eligible_models) > 0L) eligible_models[1] else selectio
 selection_table$Selected <- selection_table$Model == best_model
 write.csv(selection_table, file.path(output_dir, "nasa_model_selection.csv"), row.names = FALSE)
 
-refit_locked_model <- function(name, y) {
-  if (name == "Trend + season") return(tslm(y ~ trend + season))
-  if (name == "Holt-Winters") return(HoltWinters(y, beta = FALSE, seasonal = "additive"))
-  if (name == "ETS") {
-    training_fit <- models[["ETS"]]$fit
-    component_code <- paste0(
-      training_fit$components[c("error", "trend", "season")], collapse = ""
-    )
-    is_damped <- isTRUE(as.logical(training_fit$components["damped"]))
-    return(ets(y, model = component_code, damped = is_damped))
-  }
-  if (name == "SARIMA") {
-    training_fit <- models[["SARIMA"]]$fit
-    order_values <- arimaorder(training_fit)
-    coefficient_names <- names(coef(training_fit))
-    return(Arima(
-      y,
-      order = unname(order_values[c("p", "d", "q")]),
-      seasonal = list(
-        order = unname(order_values[c("P", "D", "Q")]),
-        period = unname(order_values["Frequency"])
-      ),
-      include.mean = "intercept" %in% coefficient_names,
-      include.drift = "drift" %in% coefficient_names,
-      method = "CSS-ML"
-    ))
-  }
-  stop("Unknown model: ", name)
-}
-full_fit <- refit_locked_model(best_model, series)
-selected <- forecast(full_fit, h = 12L)
-full_model_spec <- data.frame(
-  Model = best_model,
-  Training_specification = model_specs$Specification[model_specs$Model == best_model],
-  Full_data_refit = format_model(full_fit),
-  stringsAsFactors = FALSE
+# Persist a self-contained manual-SARIMA evidence bundle for the individual
+# report. This remains auditable even when another group model updates the
+# shared comparison outputs later.
+write.csv(
+  diagnostics[diagnostics$Model == "SARIMA", ],
+  file.path(sarima_output_dir, "nasa_residual_diagnostics.csv"),
+  row.names = FALSE
 )
-write.csv(full_model_spec, file.path(output_dir, "nasa_selected_full_refit.csv"), row.names = FALSE)
-forecast_dates <- seq(as.Date("2026-01-01"), as.Date("2026-12-01"), by = "month")
-forecast_table <- data.frame(
-  date = forecast_dates,
-  point_forecast = as.numeric(selected$mean),
-  lower_80 = as.numeric(selected$lower[, 1]),
-  upper_80 = as.numeric(selected$upper[, 1]),
-  lower_95 = as.numeric(selected$lower[, 2]),
-  upper_95 = as.numeric(selected$upper[, 2])
+write.csv(
+  model_parameters[model_parameters$Model == "SARIMA", ],
+  file.path(sarima_output_dir, "nasa_model_parameters.csv"),
+  row.names = FALSE
 )
-write.csv(forecast_table, file.path(output_dir, "nasa_final_forecast.csv"), row.names = FALSE)
-
+write.csv(
+  selection_table[selection_table$Model == "SARIMA", ],
+  file.path(sarima_output_dir, "nasa_model_selection.csv"),
+  row.names = FALSE
+)
 month_summary <- aggregate(
   solar_irradiance ~ month,
   data = transform(monthly, month = factor(format(date, "%b"), levels = month.abb)),
@@ -604,6 +791,22 @@ plot(training_decomposition$time.series[, "seasonal"], type = "l", col = "#D9770
      xlab = "", ylab = "Seasonal", main = "Training STL seasonal")
 plot(training_decomposition$time.series[, "remainder"], type = "h", col = "grey35",
      xlab = "Year", ylab = "Remainder", main = "Training STL remainder")
+dev.off()
+
+png(file.path(figure_dir, "nasa_sarima_manual_identification.png"), width = 1600, height = 1400, res = 180)
+par(mfrow = c(2, 2), mar = c(4, 4, 3.5, 1), mgp = c(2.4, 0.7, 0))
+plot(train, type = "l", col = "#A65300", lwd = 1.5,
+     xlab = "Year", ylab = "kWh/m2/day", main = "Training series on response scale")
+grid(col = "grey88")
+plot(sarima_identification_series, type = "l", col = "#0072B2", lwd = 1.3,
+     xlab = "Year", ylab = "Seasonal difference",
+     main = "After one lag-12 difference (d=0, D=1)")
+abline(h = 0, lty = 2, col = "grey45")
+grid(col = "grey88")
+Acf(sarima_identification_series, lag.max = 48,
+    main = "ACF used to propose q and Q")
+Pacf(sarima_identification_series, lag.max = 48,
+     main = "PACF used to propose p and P")
 dev.off()
 
 model_colors <- c("#0072B2", "#D55E00", "#009E73", "#CC79A7")
@@ -697,11 +900,19 @@ for (i in seq_along(models)) {
   dev.off()
 }
 
-png(file.path(figure_dir, "nasa_final_forecast.png"), width = 1800, height = 1000, res = 180)
-plot(selected, main = paste("Selected model:", best_model),
-     xlab = "Year", ylab = "kWh/m2/day", col = "#D97706")
-grid(col = "grey88")
-dev.off()
+sarima_figure_files <- c(
+  "nasa_sarima_manual_identification.png",
+  "nasa_sarima_diagnostics.png",
+  "nasa_sarima_test_forecast.png"
+)
+copied_sarima_figures <- file.copy(
+  file.path(figure_dir, sarima_figure_files),
+  file.path(sarima_figure_dir, sarima_figure_files),
+  overwrite = TRUE
+)
+if (!all(copied_sarima_figures)) {
+  stop("Failed to persist one or more manual SARIMA report figures.")
+}
 
 metadata <- payload$header
 audit <- data.frame(
@@ -738,7 +949,7 @@ writeLines(
 
 sink(file.path(output_dir, "nasa_analysis_summary.txt"))
 cat("NASA POWER Kuala Lumpur solar irradiance forecasting\n")
-cat("Generated:", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), "\n\n")
+cat("Generated: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"), "\n\n", sep = "")
 print(audit, row.names = FALSE)
 cat("\nDescriptive statistics\n"); print(descriptive, row.names = FALSE)
 cat("\nAverage solar irradiance by month\n"); print(month_summary, row.names = FALSE)
@@ -779,12 +990,13 @@ cat("\nRegression rolling-origin cross-validation (h = 12)\n")
 print(regression_cv_summary, row.names = FALSE)
 cat("\nTransformation and stationarity evidence\n")
 print(differencing_evidence, row.names = FALSE)
+cat("\nManual SARIMA ACF/PACF evidence\n")
+print(acf_pacf_evidence, row.names = FALSE)
+cat("\nManual SARIMA candidate comparison (AICc plus residual gate)\n")
+print(manual_sarima$comparison, row.names = FALSE)
 cat("\nSoftware versions\n"); print(software_versions, row.names = FALSE)
 cat("\nGroup-level model-selection evidence\n")
 print(selection_table, row.names = FALSE)
-cat("\nSelected full-data locked-specification refit\n")
-print(full_model_spec, row.names = FALSE)
-cat("\n2026 forecast\n"); print(forecast_table, row.names = FALSE)
 sink()
 
 cat("NASA analysis completed successfully. Selected model:", best_model, "\n")
